@@ -29,7 +29,7 @@ Last updated: 2026-10-21
 - [x] Direct dependency versions pinned.
 - [ ] npm lockfile generated and dependency installation verified.
 - [ ] Lint, typecheck, unit tests, and production build pass with recorded evidence.
-- [ ] GitHub Actions run observed and successful; latest queried run list returned zero runs.
+- [ ] GitHub Actions validation run completes successfully; latest observed run is pending with no job results yet.
 - [ ] CafeOS Vercel project linked to the selected repository and target scope verified.
 - [x] No application database schema or production data changed.
 
