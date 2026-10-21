@@ -14,7 +14,7 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [x] Dependency versions pinned.
 - [ ] Lockfile generated and dependency installation verified.
 - [ ] Lint, typecheck, unit tests, and production build run successfully.
-- [ ] CafeOS Vercel project linked to intended GitHub repository and target scope verified.
+- [ ] CafeOS Vercel project linked to intended GitHub repository and target scope verified (blocked: Vercel integration returned repo_no_access).
 - [x] No business schema or production data changed in Phase 01.
 
 ## 02 — Authentication, tenants, and permissions
