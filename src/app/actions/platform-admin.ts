@@ -75,7 +75,7 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !secret) return { error: "Server-side Supabase secret is missing. Set SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY in Vercel Preview; never use NEXT_PUBLIC_." };
 
-  const created = await adminFetch<{ id: string; email?: string; app_metadata?: Record<string, unknown> }>("/auth/v1/admin/users", {
+  const created = await adminFetch<{ id?: string; email?: string; app_metadata?: Record<string, unknown>; user?: { id?: string } }>("/auth/v1/admin/users", {
     method: "POST",
     body: JSON.stringify({
       email: authEmail,
@@ -85,7 +85,7 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
       app_metadata: { cafeos_account_type: "restaurant_owner", must_change_password: true, account_status: "active" },
     }),
   });
-  const authUserId = created.data?.id;
+  const authUserId = created.data?.id ?? created.data?.user?.id;
   if (!created.ok || !authUserId) {
     return { error: "Supabase could not create the owner identity. Check the server-side key and Auth logs; no credentials were issued." };
   }
@@ -129,11 +129,11 @@ export async function resetRestaurantPasswordAction(_previous: ResetPasswordStat
     { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: true, credential_reset_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
   );
   if (!locked.ok || !locked.data?.length) return { error: "Could not lock the account for credential reset." };
-  const user = await adminFetch<{ app_metadata?: Record<string, unknown> }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
+  const user = await adminFetch<{ app_metadata?: Record<string, unknown>; user?: { app_metadata?: Record<string, unknown> } }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
   if (!user.ok || !user.data) return { error: "Account is safely locked, but Auth metadata could not be read. Retry after checking the Supabase secret." };
   const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
     method: "PUT",
-    body: JSON.stringify({ password, app_metadata: { ...(user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status } }),
+    body: JSON.stringify({ password, app_metadata: { ...(user.data?.user?.app_metadata ?? user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status } }),
   });
   if (!updated.ok) return { error: "Account is locked for safety but password reset failed. Retry the reset." };
   await adminFetch("/rest/v1/audit_events", {
