@@ -148,3 +148,6 @@ Phase 03 remains NOT STARTED.
 - [ ] Leaked-password protection enabled in Supabase Auth.
 
 Phase 02 remains IN PROGRESS, not accepted. Phase 03 has NOT STARTED.
+
+
+- [x] Audited the legacy create_tenant_with_branch RPC grants; revoked client execution in applied migration 20261022092809 and verified only service_role retains EXECUTE.
