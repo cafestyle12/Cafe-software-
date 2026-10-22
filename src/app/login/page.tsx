@@ -1,13 +1,13 @@
-"use client";
-
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signInAction } from "@/app/actions/auth";
-import { authConfigured } from "@/lib/supabase/auth";
-import { useState } from "react";
+import { authConfigured, getCurrentUser } from "@/lib/supabase/auth";
 
 type Props = { searchParams: Promise<{ error?: string; notice?: string }> };
 
 export default async function LoginPage({ searchParams }: Props) {
+  const user = await getCurrentUser();
+  if (user) redirect("/app");
   const params = await searchParams;
   const configured = authConfigured();
 
