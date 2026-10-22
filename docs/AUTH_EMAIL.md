@@ -47,3 +47,10 @@ Check inbox, spam and promotions. Review Supabase Auth logs and the SMTP provide
 6. If delivery fails, verify SMTP settings, sender identity, domain DNS, quotas, Site URL, redirect allowlist, and the saved Dashboard templates.
 
 Never commit or share SMTP passwords, service-role keys, confirmation tokens, or session tokens.
+
+
+## Latest delivery investigation — 2026-10-22
+- Supabase Auth logs show a `mail.send` event for a confirmation message from the default sender `noreply@mail.app.supabase.io`. This proves Supabase attempted/sent through its mail pipeline, not that the message reached the inbox.
+- Recovery requests returned HTTP 429 `over_email_send_rate_limit`; repeated requests will not fix delivery and can extend the cooldown. Wait for the limit to reset before one controlled test.
+- Logs also show repeated signup events for an existing account. Supabase may respond successfully without sending another confirmation email for an already-registered address. The app now detects the documented empty-`identities` response and directs the user to **Resend confirmation** rather than treating another signup as a new account.
+- For reliable inbox delivery, the project owner must configure supported custom SMTP in Supabase Auth settings, verify the sender/domain, and publish the provider's required DNS records. The available connected management tools do not expose writable SMTP/template settings, and no SMTP credentials were supplied. Do not claim this provider-side step is complete until verified.
