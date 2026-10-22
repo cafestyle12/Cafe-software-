@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 export function normalizeRestaurantId(value: string) {
-  return value.trim().toUpperCase().replace(/\s+/g, "");
+  return value.trim().toUpperCase();
 }
 
 export function isValidRestaurantId(value: string) {
