@@ -12,15 +12,25 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [x] Environment variable names documented without secret values.
 - [x] Strict TypeScript and lint/test scripts configured.
 - [x] Dependency versions pinned.
-- [ ] Lockfile generated and dependency installation verified.
-- [ ] Lint, typecheck, unit tests, and production build run successfully.
-- [x] Deployment intentionally deferred per user instruction; no deployment triggered. Vercel project linkage remains unverified in the currently available connector scope and is not a Phase 01 gate.
+- [x] Lockfile committed and deterministic CI installation configured.
+- [x] Lint, typecheck, unit tests, and production build verified in successful run #23.
+- [x] Deployment intentionally deferred per user instruction; no deployment triggered.
 - [x] No business schema or production data changed in Phase 01.
 
-## 02 — Authentication, tenants, and permissions
-- [ ] Auth lifecycle, profiles, tenants, branches, memberships, roles, and granular permissions.
-- [ ] RLS and server-side authorization; cross-tenant negative tests.
-- [ ] Session revocation and role-boundary tests.
+## 02 — Authentication, tenants, and permissions (in progress)
+- [x] Supabase Auth UI/actions implemented for sign-in, sign-up, sign-out, email confirmation, password recovery, and password update.
+- [x] Secure HttpOnly session cookies and request-time token validation/refresh implemented.
+- [x] Profiles, tenants, branches, memberships, branch memberships, roles, granular permissions, invite model, and audit events created in Supabase.
+- [x] RLS enabled and forced on all eleven public tables; security advisor returned no findings.
+- [x] Atomic tenant + first branch onboarding and default owner/manager/staff role seeding implemented.
+- [x] System roles protected from ordinary role CRUD; owner membership protections and role-assignment boundaries added.
+- [x] Tenant slug normalization unit tests added.
+- [ ] Phase 02 GitHub Actions CI passes (lint, typecheck, unit tests, production build).
+- [ ] End-to-end sign-up/sign-in/confirmation/recovery verified against configured Supabase email templates.
+- [ ] Two-user cross-tenant negative tests and branch-scope tests executed with authenticated sessions.
+- [ ] Invitation delivery/acceptance and member disable/revoke flows implemented and tested.
+- [ ] Session revocation and role-boundary tests pass.
+- [ ] Phase 02 security/performance review signed off.
 
 ## 03 — Café setup, branches, tables, floor plans, QR
 - [ ] Tenant settings, branch configuration, tables, floor plan data, QR token issuance/revocation.
