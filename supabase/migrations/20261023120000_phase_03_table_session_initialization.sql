@@ -31,6 +31,7 @@ begin
       and b.status='active' and n.status='active';
   if branch_label is null then raise exception 'invalid_qr' using errcode='P0002'; end if;
 
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(qr_row.id::text || ':' || p_idempotency_key, 0));
   select * into existing from public.table_sessions s
     where s.qr_credential_id=qr_row.id and s.idempotency_key=p_idempotency_key
       and s.status='active' and s.expires_at>now();
@@ -45,9 +46,7 @@ begin
   idem := p_idempotency_key;
   insert into public.table_sessions(tenant_id,branch_id,table_id,qr_credential_id,session_token_hash,idempotency_key,status,expires_at)
   values(qr_row.tenant_id,qr_row.branch_id,qr_row.table_id,qr_row.id,session_hash,idem,'active',now()+interval '4 hours')
-  on conflict(qr_credential_id,idempotency_key) do update
-    set session_token_hash=excluded.session_token_hash,status='active',expires_at=excluded.expires_at,revoked_at=null
-    where public.table_sessions.status <> 'active' or public.table_sessions.expires_at <= now();
+  on conflict(qr_credential_id,idempotency_key) do nothing;
 
   return query select raw_session, now()+interval '4 hours', table_row.label, branch_label;
 end;
