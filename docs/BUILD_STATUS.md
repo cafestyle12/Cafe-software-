@@ -97,3 +97,6 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Supabase Security Advisor now reports two informational RLS-enabled/no-policy notices for the intentionally service-role-only mapping/rate-limit tables and one warning that leaked-password protection is disabled.
 - Vercel refused a Preview deployment with 403 permission denied. The latest READY preview is still commit 5d9b907c5f8f8b2ea9cb87fe4e22c02351aef6cd, not the current branch head. Do not claim the latest auth rebuild is deployed.
 - Live provisioning/login remains blocked until server-only Supabase secret and CAFEOS_PLATFORM_ADMIN_TOKEN are configured in Vercel Preview, and Vercel Preview deployment permission is restored. The .invalid identity alias must be confirmed accepted by the real Supabase Auth Admin API using a controlled test account.
+
+
+- Additional security fix: applied migration version 20261022092809 to revoke authenticated/anon/public execution of the legacy create_tenant_with_branch RPC. Routine grants were re-queried and confirmed service_role-only for tenant provisioning and rate-limit/admin RPCs.
