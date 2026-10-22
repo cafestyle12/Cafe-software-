@@ -64,7 +64,7 @@ begin
               then null
             when public.auth_attempt_windows.locked_until > now()
               then public.auth_attempt_windows.locked_until
-            when public.auth_attempt_windows.attempts + 1 >= 5
+            when public.auth_attempt_windows.attempts + 1 >= 6
               then now() + interval '15 minutes'
             else null
           end
