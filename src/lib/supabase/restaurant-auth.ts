@@ -1,6 +1,9 @@
 import "server-only";
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
+import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId } from "@/lib/restaurant-credentials";
+
+export { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId };
 
 export type RestaurantAccount = {
   tenant_id: string;
@@ -11,9 +14,6 @@ export type RestaurantAccount = {
   must_change_password: boolean;
 };
 
-export function normalizeRestaurantId(value: string) {
-  return value.trim().toUpperCase().replace(/\s+/g, "");
-}
 
 export function adminConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -65,15 +65,5 @@ export async function clearRestaurantLoginLimit(keys: string[]) {
   });
 }
 
-export function generateRestaurantId() {
-  const token = randomBytes(6).toString("hex").toUpperCase();
-  return `CAFE-${token.slice(0, 4)}-${token.slice(4)}`;
-}
 
-export function generateTemporaryPassword() {
-  return randomBytes(24).toString("base64url") + "!aA9";
-}
 
-export function generateInternalAuthEmail() {
-  return `${randomBytes(16).toString("hex")}@auth.cafeos.invalid`;
-}
