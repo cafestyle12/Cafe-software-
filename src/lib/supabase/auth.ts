@@ -4,11 +4,13 @@ import { cookies } from "next/headers";
 
 const ACCESS_COOKIE = "cafeos_access_token";
 const REFRESH_COOKIE = "cafeos_refresh_token";
+const SESSION_VERSION_COOKIE = "cafeos_session_version";
 
 type AuthUser = {
   id: string;
   email?: string;
   user_metadata?: { full_name?: string; name?: string };
+  app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string; session_version?: string };
 };
 
 type AuthSession = {
@@ -57,12 +59,18 @@ export async function setAuthSession(session: AuthSession) {
     ...options,
     maxAge: 60 * 60 * 24 * 365,
   });
+  if (session.user?.app_metadata?.session_version) {
+    jar.set(SESSION_VERSION_COOKIE, session.user.app_metadata.session_version, { ...options, maxAge: 60 * 60 * 24 * 365 });
+  } else {
+    jar.set(SESSION_VERSION_COOKIE, "", { ...options, maxAge: 0 });
+  }
 }
 
 export async function clearAuthSession() {
   const jar = await cookies();
   jar.set(ACCESS_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
   jar.set(REFRESH_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+  jar.set(SESSION_VERSION_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
 }
 
 async function getUserWithToken(accessToken: string): Promise<AuthUser | null> {
