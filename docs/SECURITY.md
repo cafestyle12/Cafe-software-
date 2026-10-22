@@ -73,3 +73,11 @@ Last audited: 2026-10-22
 ## RLS bypass privilege audit — 2026-10-22
 - Discovered and fixed dangerous default table grants: TRUNCATE bypasses RLS. Migration 20261022094402 removes TRUNCATE/REFERENCES/TRIGGER from public browser roles across public tables, removes all anon table grants, and changes postgres default privileges for future tables. Verification returned no dangerous grants for anon/authenticated.
 - Migration 20261022094252 also revoked direct tenant INSERT from browser roles and gated colleague-profile visibility through the mapped-owner RLS helper.
+
+
+## Phase 03 QR and seating security notes
+- New seating tables use forced RLS and tenant permission checks. Cross-tenant table references are blocked by composite foreign keys.
+- QR secrets are 32-byte random opaque tokens; only SHA-256 hashes are stored. Revocation marks credentials inactive and the public resolver ignores inactive credentials and inactive tables/branches/tenants.
+- Public QR resolver returns only restaurant name, branch name, table label and capacity. Invalid inputs return a generic invalid response. Public route does not grant staff access or create orders/payments.
+- The public table-session schema exists but the secure session-creation/reuse/revocation endpoint is not implemented yet. Do not treat QR landing as a completed customer session.
+- Raw QR URL is returned through an authenticated server action state and is not placed in admin query parameters. Copy/share only through the intended customer QR medium.
