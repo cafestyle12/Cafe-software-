@@ -35,9 +35,6 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
   supabaseRequest<QR[]>(`/rest/v1/table_qr_credentials?select=id,table_id,status,created_at,revoked_at&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&order=created_at.desc`)
  ]):[{data:[] as Zone[]},{data:[] as CafeTable[]},{data:[] as QR[]}];
  const zones=zonesResult.data??[], tables=tablesResult.data??[], qrs=qrResult.data??[];
- const issued= params.qrIssued ? String(params.qrIssued) : null;
- const baseUrl=process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/,"");
- const publicUrl=issued&&baseUrl?baseUrl+"/t/"+encodeURIComponent(issued):null;
  return <main className="mx-auto min-h-screen max-w-7xl px-5 py-7 sm:px-8">
   <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
    <div><Link href="/app" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></Link><p className="mt-1 text-xs text-[var(--muted)]">Phase 03 · Branches, tables & floor plans</p></div>
