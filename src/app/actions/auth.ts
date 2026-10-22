@@ -30,7 +30,9 @@ export async function signUpAction(formData: FormData) {
   if (name.length < 2 || name.length > 120 || !emailIsValid(email) || password.length < 10) {
     redirect("/signup?error=Enter%20your%20name%2C%20a%20valid%20email%2C%20and%20a%20password%20of%20at%20least%2010%20characters");
   }
-  const redirectTo = `${siteUrl()}/auth/confirm`;
+  const baseUrl = siteUrl();
+  if (!baseUrl) redirect("/signup?error=The%20site%20URL%20is%20not%20configured");
+  const redirectTo = `${baseUrl}/auth/confirm`;
   const result = await authApi(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
     email,
     password,
@@ -49,8 +51,9 @@ export async function requestPasswordResetAction(formData: FormData) {
   if (!emailIsValid(email)) redirect("/forgot-password?error=Enter%20a%20valid%20email%20address");
   const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!cfgUrl || !cfgKey) redirect("/forgot-password?error=Authentication%20is%20not%20configured");
-  const response = await fetch(`${cfgUrl.replace(/\/$/, "")}/auth/v1/recover?redirect_to=${encodeURIComponent(siteUrl() + "/auth/confirm")}`, {
+  const baseUrl = siteUrl();
+  if (!cfgUrl || !cfgKey || !baseUrl) redirect("/forgot-password?error=Authentication%20redirect%20is%20not%20configured");
+  const response = await fetch(`${cfgUrl.replace(/\/$/, "")}/auth/v1/recover?redirect_to=${encodeURIComponent(baseUrl + "/auth/confirm")}`, {
     method: "POST",
     headers: { apikey: cfgKey, "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -147,7 +150,8 @@ export async function inviteMemberAction(formData: FormData) {
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !secret) redirect(`/app/members?tenant=${encodeURIComponent(tenantId)}&error=Invitation%20email%20is%20not%20configured%20yet`);
+  const baseUrl = siteUrl();
+  if (!url || !secret || !baseUrl) redirect(`/app/members?tenant=${encodeURIComponent(tenantId)}&error=Invitation%20email%20or%20site%20URL%20is%20not%20configured%20yet`);
 
   const currentMembership = await (await import("@/lib/supabase/auth")).supabaseRequest<Array<{ id: string }>>(
     `/rest/v1/memberships?select=id&tenant_id=eq.${tenantId}&user_id=eq.${user.id}&status=eq.active&limit=1`,
@@ -192,7 +196,7 @@ export async function inviteMemberAction(formData: FormData) {
   const inviteId = inserted.data?.[0]?.id;
   if (inserted.error || !inviteId) redirect(`/app/members?tenant=${tenantId}&error=Could%20not%20create%20the%20invitation`);
 
-  const redirectTo = `${siteUrl()}/auth/confirm?invite_id=${encodeURIComponent(inviteId)}`;
+  const redirectTo = `${baseUrl}/auth/confirm?invite_id=${encodeURIComponent(inviteId)}`;
   const inviteResponse = await fetch(`${url}/auth/v1/invite?redirect_to=${encodeURIComponent(redirectTo)}`, {
     method: "POST",
     headers: { apikey: secret, Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
