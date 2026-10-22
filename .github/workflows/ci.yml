@@ -37,7 +37,7 @@ jobs:
             git push
           fi
       - name: Verify clean lockfile installation
-        run: npm ci
+        run: npm ci --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Type-check
