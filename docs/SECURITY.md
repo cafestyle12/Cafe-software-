@@ -68,3 +68,8 @@ Last audited: 2026-10-22
 ## Session revocation update — 2026-10-22
 - Session-version rotation is enforced in both middleware and RLS. Old JWTs cannot regain access merely because an account is reactivated; a new login must use the current Auth metadata version.
 - The first-login password form reauthenticates the temporary password and rejects reusing it as the new password. Partial password/metadata failures leave RLS or middleware closed.
+
+
+## RLS bypass privilege audit — 2026-10-22
+- Discovered and fixed dangerous default table grants: TRUNCATE bypasses RLS. Migration 20261022094402 removes TRUNCATE/REFERENCES/TRIGGER from public browser roles across public tables, removes all anon table grants, and changes postgres default privileges for future tables. Verification returned no dangerous grants for anon/authenticated.
+- Migration 20261022094252 also revoked direct tenant INSERT from browser roles and gated colleague-profile visibility through the mapped-owner RLS helper.
