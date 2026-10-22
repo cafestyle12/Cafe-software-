@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { authApi, clearAuthSession, setAuthSession } from "@/lib/supabase/auth";
 import { validateRestaurantPasswordChange } from "@/lib/restaurant-credentials";
@@ -28,8 +29,8 @@ export async function signInAction(formData: FormData) {
     redirect("/login?error=Too%20many%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
   }
 
-  const accounts = await adminFetch<Array<{ tenant_id: string; auth_user_id: string; auth_email: string; status: string; must_change_password: boolean }>>(
-    `/rest/v1/restaurant_auth_accounts?select=tenant_id,auth_user_id,auth_email,status,must_change_password&restaurant_id=eq.${encodeURIComponent(restaurantId)}&limit=1`,
+  const accounts = await adminFetch<Array<{ tenant_id: string; auth_user_id: string; auth_email: string; status: string; must_change_password: boolean; session_version: string }>>(
+    `/rest/v1/restaurant_auth_accounts?select=tenant_id,auth_user_id,auth_email,status,must_change_password,session_version&restaurant_id=eq.${encodeURIComponent(restaurantId)}&limit=1`,
   );
   const account = accounts.data?.[0];
   if (!accounts.ok || !account || account.status !== "active") {
@@ -37,7 +38,8 @@ export async function signInAction(formData: FormData) {
   }
 
   const result = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password });
-  if (!result.ok || !result.payload?.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id) {
+  const authMetadata = (result.payload?.user as { app_metadata?: { cafeos_account_type?: string; account_status?: string; must_change_password?: boolean; session_version?: string } } | undefined)?.app_metadata;
+  if (!result.ok || !result.payload?.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id || authMetadata?.cafeos_account_type !== "restaurant_owner" || authMetadata.account_status !== "active" || authMetadata.session_version !== account.session_version) {
     redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   }
   await clearRestaurantLoginLimit(limit.keys);
@@ -55,15 +57,8 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
   const currentPassword = String(formData.get("current_password") ?? "");
-  const passwordError = validateRestaurantPasswordChange(currentPassword, password, confirm);
-  if (passwordError === "weak_password") {
-    redirect("/change-password?error=Use%20a%2012%E2%80%93128%20character%20password%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
-  }
-  if (passwordError === "password_mismatch") {
-    redirect("/change-password?error=New%20passwords%20do%20not%20match");
-  }
-  if (passwordError === "must_differ_from_current") {
-    redirect("/change-password?error=Enter%20your%20current%20password%20and%20choose%20a%20different%20new%20password");
+  if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password) || password !== confirm) {
+    redirect("/change-password?error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
   }
 
   const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
@@ -71,85 +66,82 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const user = await getCurrentUser();
   const accessToken = await currentAccessToken();
   if (!user || !accessToken) redirect("/login?error=Please%20sign%20in%20again");
+  const appMetadata = (user as { app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string; session_version?: string; [key: string]: unknown } }).app_metadata;
+  if (appMetadata?.cafeos_account_type !== "restaurant_owner" || appMetadata.account_status !== "active") redirect("/login?error=Restaurant%20account%20is%20unavailable");
 
-  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!cfgUrl || !cfgKey) redirect("/change-password?error=Authentication%20is%20not%20configured");
-
-  const accounts = await adminFetch<Array<{ auth_email: string; status: string; must_change_password: boolean }>>(
-    `/rest/v1/restaurant_auth_accounts?select=auth_email,status,must_change_password&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+  const accounts = await adminFetch<Array<{ auth_email: string; status: string; session_version: string; must_change_password: boolean }>>(
+    `/rest/v1/restaurant_auth_accounts?select=auth_email,status,session_version,must_change_password&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
   );
   const account = accounts.data?.[0];
   if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
+  const firstLogin = appMetadata.must_change_password === true || account.must_change_password;
 
-  const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string; cafeos_account_type?: string } }).app_metadata ?? {};
-  const firstLogin = account.must_change_password || appMetadata.must_change_password === true;
-  if (appMetadata.cafeos_account_type !== "restaurant_owner") redirect("/login?error=Account%20is%20unavailable");
-
-  // Reauthenticate for both first-login and later changes. The first-login form
-  // asks for the temporary password so choosing that same password is rejected.
-  const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
-  if (!reauth.ok || reauth.payload?.user?.id !== user.id) {
-    redirect("/change-password?error=Current%20password%20is%20incorrect");
+  if (!firstLogin) {
+    if (currentPassword.length < 1) redirect("/account-settings?error=Enter%20your%20current%20password");
+    const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
+    if (!reauth.ok) redirect("/account-settings?error=Current%20password%20is%20incorrect");
   }
 
-  // If the mapping says first-login is required but this JWT has stale, less
-  // restrictive metadata, repair the Auth flag and revoke this stale session.
-  // The owner signs in again to receive a JWT that is denied by RLS until change.
-  if (account.must_change_password && appMetadata.must_change_password !== true) {
-    const lockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+  const sessionVersion = randomUUID();
+  // Rotate the Auth-side session version with the password first. The RLS helper
+  // compares this claim to the mapping row, so a partial update fails closed.
+  const updated = await adminFetch<{ id: string }>(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      password,
+      app_metadata: {
+        ...(appMetadata ?? {}),
+        cafeos_account_type: "restaurant_owner",
+        account_status: "active",
+        must_change_password: firstLogin,
+        session_version: sessionVersion,
+      },
+    }),
+  });
+  if (!updated.ok) redirect(firstLogin ? "/change-password?first=1&error=Password%20could%20not%20be%20updated" : "/account-settings?error=Password%20could%20not%20be%20updated");
+
+  const profileUpdate = await adminFetch<Array<{ tenant_id: string }>>(
+    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        must_change_password: false,
+        password_changed_at: new Date().toISOString(),
+        session_version: sessionVersion,
+        updated_at: new Date().toISOString(),
+      }),
+    },
+  );
+  if (!profileUpdate.ok || !profileUpdate.data?.length) {
+    redirect(firstLogin
+      ? "/change-password?first=1&error=Password%20changed%20but%20account%20activation%20is%20pending.%20Retry%20the%20change"
+      : "/account-settings?error=Password%20changed%20but%20session%20rotation%20is%20pending.%20Retry%20the%20change");
+  }
+
+  if (firstLogin) {
+    const activated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
       method: "PUT",
-      body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: true, account_status: "active" } }),
+      body: JSON.stringify({
+        app_metadata: { ...(appMetadata ?? {}), cafeos_account_type: "restaurant_owner", account_status: "active", must_change_password: false, session_version: sessionVersion },
+      }),
     });
-    if (!lockedMetadata.ok) redirect("/change-password?error=Could%20not%20securely%20prepare%20the%20first-login%20password%20change.%20Please%20retry");
+    if (!activated.ok) redirect("/change-password?first=1&error=Password%20changed.%20Final%20activation%20is%20pending.%20Retry%20the%20change");
+  }
+
+  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (cfgUrl && cfgKey) {
     await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
       method: "POST",
       headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     }).catch(() => null);
-    await clearAuthSession();
-    redirect("/login?notice=Security%20state%20was%20updated.%20Sign%20in%20again%20to%20change%20your%20temporary%20password");
   }
-
-  // Keep must_change_password=true in Auth metadata until the DB update succeeds.
-  // This makes partial failures fail closed at both middleware and RLS boundaries.
-  const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
-    method: "PUT",
-    body: JSON.stringify({ password }),
-  });
-  if (!updated.ok) redirect("/change-password?error=Password%20could%20not%20be%20updated.%20Please%20try%20again");
-
-  const profileUpdate = await adminFetch<Array<{ tenant_id: string }>>(
-    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
-    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: false, password_changed_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
-  );
-  if (!profileUpdate.ok || !profileUpdate.data?.length) {
-    redirect("/change-password?error=Password%20changed%2C%20but%20the%20account%20is%20still%20locked%20for%20safety.%20Contact%20CafeOS%20support");
-  }
-
-  const unlockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
-    method: "PUT",
-    body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: false, account_status: "active" } }),
-  });
-  if (!unlockedMetadata.ok) {
-    // RLS also checks the signed JWT claim; keep this session and any future
-    // token carrying must_change_password=true denied until a successful retry.
-    await adminFetch(`/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ must_change_password: true, updated_at: new Date().toISOString() }),
-    });
-    redirect("/change-password?error=Password%20changed%2C%20but%20activation%20is%20pending.%20Please%20retry%20or%20contact%20CafeOS%20support");
-  }
-
-  await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
-    method: "POST",
-    headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
-    cache: "no-store",
-  }).catch(() => null);
   await clearAuthSession();
-  redirect("/login?notice=Password%20updated.%20Please%20sign%20in%20with%20your%20new%20password");
+  redirect("/login?notice=Password%20updated.%20Please%20sign%20in%20again%20with%20your%20new%20password");
 }
+
 
 export async function inviteMemberAction(formData: FormData) {
   void formData;
