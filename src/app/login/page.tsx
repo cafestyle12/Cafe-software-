@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInAction } from "@/app/actions/auth";
 import { authConfigured, getCurrentUser } from "@/lib/supabase/auth";
+import { adminConfig } from "@/lib/supabase/restaurant-auth";
 import { LoginShowcase } from "./login-showcase";
 import { PasswordField } from "@/components/password-field";
 
@@ -14,7 +15,7 @@ export default async function LoginPage({ searchParams }: Props) {
     redirect(meta?.must_change_password ? "/change-password?first=1" : "/app");
   }
   const params = await searchParams;
-  const configured = authConfigured();
+  const configured = authConfigured() && Boolean(adminConfig());
 
   return (
     <main className="auth-stage">
@@ -36,7 +37,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <p className="auth-subtitle">Use the Restaurant ID and temporary or current password provided by CafeOS.</p>
             {params.error && <p role="alert" className="auth-alert auth-error">{params.error}</p>}
             {params.notice && <p role="status" className="auth-alert auth-success">{params.notice}</p>}
-            {!configured && <p role="alert" className="auth-alert auth-warning">Authentication is not configured yet. Add the Supabase URL and publishable key.</p>}
+            {!configured && <p role="alert" className="auth-alert auth-warning">Authentication setup is incomplete. Configure the Supabase URL, publishable key, and server-only Supabase secret in the Preview environment.</p>}
             <form action={signInAction} className="auth-form">
               <label>Restaurant ID<span className="input-shell"><span aria-hidden="true">▦</span><input name="restaurant_id" type="text" autoComplete="username" required maxLength={64} placeholder="CAFE-AB12-34CD56EF" style={{ textTransform: "uppercase" }} /></span></label>
               <label>Password<PasswordField name="password" placeholder="Enter your password" /></label>
