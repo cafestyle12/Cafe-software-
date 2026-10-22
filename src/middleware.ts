@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
       path: "/",
     };
     response.cookies.set(ACCESS_COOKIE, session.access_token, { ...cookieOptions, maxAge: Math.max(60, session.expires_in ?? 3600) });
-    response.cookies.set(REFRESH_COOKIE, session.refresh_token, { ...cookieOptions, maxAge: 60 * 60 * 24 * 30 });
+    response.cookies.set(REFRESH_COOKIE, session.refresh_token, { ...cookieOptions, maxAge: 60 * 60 * 24 * 365 });
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   } catch {
