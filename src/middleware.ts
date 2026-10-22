@@ -70,6 +70,15 @@ function gate(request: NextRequest, response: NextResponse, user: AuthUser, toke
 }
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/t/") || path === "/api/public/table-session") {
+    const publicResponse = NextResponse.next();
+    publicResponse.headers.set("Cache-Control", "private, no-store");
+    publicResponse.headers.set("Referrer-Policy", "no-referrer");
+    publicResponse.headers.set("X-Content-Type-Options", "nosniff");
+    publicResponse.headers.set("X-Frame-Options", "DENY");
+    return publicResponse;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
