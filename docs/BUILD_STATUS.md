@@ -187,3 +187,10 @@ Additional hardening after the earlier status block:
 - GitHub Actions #520 passed, but #521–#532 were still in progress when last checked; latest branch-head CI must finish green after the last commits.
 - Vercel deployment API returned HTTP 403: the connected Vercel identity does not have permission to create a Preview deployment for project `cafe-software`. No Phase 03 preview URL has been verified, so browser end-to-end acceptance cannot truthfully be marked complete. This requires the project owner to grant Preview deployment permission or to deploy this branch from an authorized Vercel account.
 - No production merge or production deployment has been performed.
+
+
+### Latest verification correction — 2026-10-22
+- GitHub Actions run #532 for the latest code commit `77d3349` completed successfully: dependency installation, lint, TypeScript type-check, unit tests, and production build all passed.
+- Documentation-only follow-up run #533 also completed successfully with the same five checks.
+- Connected Supabase confirms all 12 Phase 03 migrations, including parent-status invariants, are applied. SQL smoke checks confirmed invalid QR tokens return only a generic invalid result, all five operational tables have RLS + FORCE RLS, anonymous direct table reads are denied, and table-session rows are not directly selectable by authenticated clients.
+- **Preview/browser acceptance remains blocked solely by Vercel permissions**: the connected identity received HTTP 403 when attempting to create a Preview deployment for `cafe-software`. Phase 03 is code/CI complete, but cannot be declared end-to-end accepted until an authorized Preview deployment can be created and exercised.
