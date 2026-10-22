@@ -51,3 +51,20 @@ describe("restaurant password change validation", () => {
     expect(validateRestaurantPasswordChange("", "NewStrong!Password42", "NewStrong!Password42")).toBe("must_differ_from_current");
   });
 });
+
+
+describe("restaurant password policy", () => {
+  it("accepts a strong matching first-login password without requiring the temporary password", () => {
+    expect(validateRestaurantPasswordChange("", "NewStrongPassword9!", "NewStrongPassword9!", false)).toBeNull();
+  });
+
+  it("requires the new password to differ from the current password for later changes", () => {
+    expect(validateRestaurantPasswordChange("CurrentStrong9!", "CurrentStrong9!", "CurrentStrong9!")).toBe("must_differ_from_current");
+    expect(validateRestaurantPasswordChange("CurrentStrong9!", "NewStrongPassword9!", "NewStrongPassword9!")).toBeNull();
+  });
+
+  it("rejects weak passwords and mismatched confirmation", () => {
+    expect(validateRestaurantPasswordChange("", "weak", "weak", false)).toBe("weak_password");
+    expect(validateRestaurantPasswordChange("", "NewStrongPassword9!", "NewStrongPassword10!", false)).toBe("password_mismatch");
+  });
+});
