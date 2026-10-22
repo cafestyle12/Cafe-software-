@@ -45,3 +45,8 @@ Do not manually edit auth.users or store passwords in public tables.
 ## Self-service tenant creation lockout
 - Applied migration version 20261022092809 (phase_02_disable_self_service_tenant_creation) revokes EXECUTE on public.create_tenant_with_branch(text,text,text) from public, anon and authenticated, granting it only to service_role. This closes the direct-RPC bypass left behind when the UI onboarding route was disabled.
 - Post-migration grant verification shows all four admin/rate-limit RPCs and the legacy tenant-creation RPC are executable only by service_role (plus postgres owner privileges, omitted from the role filter).
+
+
+## Owner-only RLS boundary — migration 20261022093023
+- The final RLS hardening migration requires both a verified Restaurant ID owner app_metadata claim and a matching active restaurant_auth_accounts row with must_change_password=false, plus active membership and active tenant status. This blocks legacy email-only sessions from reaching tenant data through direct Supabase REST calls.
+- A rollback-only SQL test passed for: first-login owner denied; mapped active owner allowed; suspended owner denied; suspended tenant denied. The test tenant and mapping were rolled back and no test tenant was retained.
