@@ -63,3 +63,8 @@ Last audited: 2026-10-22
 - Password change now requires the current/temporary password, rejects reuse, and keeps the Auth first-login flag set until the mapping update succeeds. The Auth metadata is then cleared; if that step fails, the mapping is re-locked and the JWT claim remains a deny condition.
 - Migration `20261022151000_phase_02_auth_first_login_claim_guard` was applied additively to Supabase. It replaces only the private membership helper and reasserts restricted execute grants; it does not modify tenant records.
 - Live login/provisioning remains unverified until Vercel Preview has the server-only Supabase secret and platform-admin bootstrap token and a controlled test is run. Do not mark the authentication acceptance gate complete from static code review alone.
+
+
+## Session revocation update — 2026-10-22
+- Session-version rotation is enforced in both middleware and RLS. Old JWTs cannot regain access merely because an account is reactivated; a new login must use the current Auth metadata version.
+- The first-login password form reauthenticates the temporary password and rejects reusing it as the new password. Partial password/metadata failures leave RLS or middleware closed.
