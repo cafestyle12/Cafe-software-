@@ -83,7 +83,7 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   if (appMetadata.cafeos_account_type !== "restaurant_owner") redirect("/login?error=Account%20is%20unavailable");
 
   const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
-  if (!reauth.ok || reauth.payload?.user?.id !== user.id || (reauth.payload.user as { app_metadata?: { session_version?: string } }).app_metadata?.session_version !== account.session_version) {
+  if (!reauth.ok || !reauth.payload || reauth.payload.user?.id !== user.id || (reauth.payload.user as { app_metadata?: { session_version?: string } }).app_metadata?.session_version !== account.session_version) {
     redirect("/change-password?error=Current%20password%20is%20incorrect%20or%20the%20account%20needs%20administrator%20repair");
   }
 
