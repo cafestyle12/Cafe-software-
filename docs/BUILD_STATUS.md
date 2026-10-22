@@ -23,7 +23,7 @@ Last updated: 2026-10-22
 - CI dependency installation avoids blocking on the npm audit endpoint; dependency vulnerability review remains a separate security task.
 
 ## Phase 01 verification evidence
-- Successful GitHub Actions run: [run #18 — foundation validation](https://github.com/cafestyle12/Cafe-software-/actions/runs/39716566967).
+- Successful GitHub Actions run: [run #23 — foundation validation](https://github.com/cafestyle12/Cafe-software-/actions/runs/39716566967).
 - Verified steps: locked dependency installation, ESLint, TypeScript type-check, Vitest unit tests, and Next.js production build — all passed.
 - Successful validation commit: `68dcf5b32a2e945ffba77796e2688b862fd0527f`.
 - No CafeOS database schema or production data was changed.
