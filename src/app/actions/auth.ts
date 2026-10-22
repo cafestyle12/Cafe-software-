@@ -103,7 +103,7 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
     // The Auth password changed, but fail closed at the database membership gate until the flag is reconciled.
     redirect("/change-password?error=Password%20changed%2C%20but%20account%20activation%20is%20pending.%20Please%20contact%20CafeOS%20support");
   }
-  const logout = await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
+  await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
     method: "POST",
     headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
