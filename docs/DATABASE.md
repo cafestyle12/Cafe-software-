@@ -54,7 +54,7 @@ Do not manually edit auth.users or store passwords in public tables.
 
 ## First-login JWT guard migration — 2026-10-22
 
-- Applied additive migration `20261022151000_phase_02_auth_first_login_claim_guard`.
+- Repository migration `supabase/migrations/20261022151000_phase_02_auth_first_login_claim_guard.sql` was applied; Supabase history records it as version `20261022093414`, name `phase_02_auth_first_login_claim_guard_v2`.
 - It updates `private.is_tenant_member(uuid)` to deny tenant membership when the signed JWT `app_metadata.must_change_password` claim is true, while preserving the required restaurant-owner claim, active tenant/membership/mapping checks, and `session_version` match.
 - Reasserts execute grants: `private.is_tenant_member(uuid)` is not executable by public/anon and remains executable by authenticated users for policy evaluation.
 - The migration is reversible by restoring the prior function definition from migration `20261022091308_phase_02_restaurant_id_auth`; no table or tenant data is dropped. Avoid rollback while restaurant credential accounts depend on the stricter guard without first reviewing their state.
