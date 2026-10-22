@@ -1,5 +1,10 @@
 export const plannedCapabilities = [
   {
+    title: "Authentication and workspaces",
+    description: "Secure sign-in, café workspaces, branch membership, and role-based access controls.",
+    status: "In progress",
+  },
+  {
     title: "Point of sale",
     description: "Fast billing, cash handling, merchant UPI workflows, and receipts.",
     status: "Planned",
