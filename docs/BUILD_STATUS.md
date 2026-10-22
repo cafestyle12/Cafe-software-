@@ -100,3 +100,5 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 
 
 - Additional security fix: applied migration version 20261022092809 to revoke authenticated/anon/public execution of the legacy create_tenant_with_branch RPC. Routine grants were re-queried and confirmed service_role-only for tenant provisioning and rate-limit/admin RPCs.
+
+- Additional RLS hardening applied as migration 20261022093023: legacy email-only sessions and users without a Restaurant ID mapping are denied tenant data access even if they call Supabase REST directly. A rollback-only SQL test passed for first-login and suspended-state gates.
