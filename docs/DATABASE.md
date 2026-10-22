@@ -58,3 +58,10 @@ Do not manually edit auth.users or store passwords in public tables.
 - It updates `private.is_tenant_member(uuid)` to deny tenant membership when the signed JWT `app_metadata.must_change_password` claim is true, while preserving the required restaurant-owner claim, active tenant/membership/mapping checks, and `session_version` match.
 - Reasserts execute grants: `private.is_tenant_member(uuid)` is not executable by public/anon and remains executable by authenticated users for policy evaluation.
 - The migration is reversible by restoring the prior function definition from migration `20261022091308_phase_02_restaurant_id_auth`; no table or tenant data is dropped. Avoid rollback while restaurant credential accounts depend on the stricter guard without first reviewing their state.
+
+
+## Session-version revocation — migration 20261022093302
+- restaurant_auth_accounts.session_version is a non-null UUID. Provisioning passes the same UUID into Auth app_metadata and the mapping row.
+- admin_provision_restaurant now accepts p_session_version; admin_set_restaurant_status accepts a new p_session_version and rotates it atomically with tenant/account status. Password resets rotate the mapping version before changing the Auth password.
+- private.is_tenant_member requires a restaurant_owner claim, no must_change_password JWT claim, active tenant/membership/account, mapping must_change_password=false, and an exact match between JWT session_version and mapping session_version.
+- A rollback-only database test passed for first-login denial, active mapped owner access, stale session denial after version rotation, suspended account denial and suspended tenant denial.
