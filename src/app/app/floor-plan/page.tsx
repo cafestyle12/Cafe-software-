@@ -5,6 +5,7 @@ import { signOutAction } from "@/app/actions/auth";
 import { createCafeTableAction, createSeatingZoneAction, revokeTableQrAction, updateCafeTableAction, deactivateCafeTableAction, deactivateSeatingZoneAction } from "@/app/actions/floor-plan";
 import { QrIssueForm } from "@/app/app/floor-plan/qr-issue-form";
 import { FloorPlanEditor } from "@/app/app/floor-plan/floor-plan-editor";
+import { BatchQrPanel } from "@/app/app/floor-plan/batch-qr-panel";
 
 type Membership={id:string;tenant_id:string};
 type Tenant={id:string;name:string;slug:string;status:string};
@@ -64,7 +65,7 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
     {tables.length===0&&<p className="mt-5 rounded-xl bg-[var(--cream)] p-4 text-sm text-[var(--muted)]">No tables yet. Add a table to start setting up the floor.</p>}</section>
    </div>:<p className="rounded-xl border border-[var(--border)] p-5 text-sm">Select an active branch to manage its tables.</p>}
   </>}
-  {tenantId&&branchId&&layout&&<FloorPlanEditor tenantId={tenantId} branchId={branchId} version={layout.version} tables={tables}/>}
+  {tenantId&&branchId&&<BatchQrPanel tenantId={tenantId} branchId={branchId} tables={tables.filter(t=>t.status==="active"&&!qrs.some(q=>q.table_id===t.id&&q.status==="active")).map(t=>({id:t.id,label:t.label,capacity:t.capacity}))}/>}{tenantId&&branchId&&layout&&<FloorPlanEditor tenantId={tenantId} branchId={branchId} version={layout.version} tables={tables}/>}
   <footer className="mt-10 border-t border-[var(--border)] py-5 text-xs text-[var(--muted)]">CafeOS Phase 03 · QR codes are access credentials, not staff access or ordering authorization.</footer>
  </main>;
 }
