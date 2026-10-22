@@ -81,3 +81,12 @@ Last audited: 2026-10-22
 - Public QR resolver returns only restaurant name, branch name, table label and capacity. Invalid inputs return a generic invalid response. Public route does not grant staff access or create orders/payments.
 - The public table-session schema exists but the secure session-creation/reuse/revocation endpoint is not implemented yet. Do not treat QR landing as a completed customer session.
 - Raw QR URL is returned through an authenticated server action state and is not placed in admin query parameters. Copy/share only through the intended customer QR medium.
+
+
+## Phase 03 security controls — 2026-10-22
+
+- QR token material is generated with cryptographic randomness; only SHA-256 hashes are persisted. The raw URL is returned once to the issuing owner and is never included in the administrative URL. QR SVGs are generated locally; token data is not sent to a third-party QR image service.
+- QR revocation atomically invalidates active sessions. Branch/table deactivation is blocked while active sessions exist and performs QR/session-related state changes transactionally. One-active-QR-per-table is enforced by a partial unique index.
+- Public RPCs use an empty search path and fully qualified object references. `resolve_table_qr` returns public-safe labels only; `initialize_table_session` requires a valid bearer QR token and strict idempotency-key format, serializes same-key creation, and limits active sessions to 25 per table. Public table routes are no-store and use Referrer-Policy: no-referrer.
+- Supabase advisor's anonymous SECURITY DEFINER warnings for these two public RPCs are intentional: anonymous QR scanning is a product requirement; the functions have narrow outputs and explicit token checks. Authenticated management SECURITY DEFINER RPCs verify `auth.uid()` and tenant permissions. `table_sessions`, `restaurant_auth_accounts`, and `auth_attempt_windows` intentionally have no browser-facing RLS policies.
+- Remaining external security item: enable Supabase Auth leaked-password protection before production. Full authenticated tenant-isolation and browser E2E testing is still gated on a fresh Preview deployment.
