@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId } from "../restaurant-credentials";
+import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId, validateRestaurantPasswordChange } from "../restaurant-credentials";
 
 describe("restaurant credential generation", () => {
   it("normalizes Restaurant IDs consistently", () => {
@@ -27,5 +27,27 @@ describe("restaurant credential generation", () => {
     const emails = new Set(Array.from({ length: 100 }, () => generateInternalAuthEmail()));
     expect(emails.size).toBe(100);
     for (const email of emails) expect(email).toMatch(/^[a-f0-9]{32}@auth\.cafeos\.invalid$/);
+  });
+});
+
+
+describe("restaurant password change validation", () => {
+  it("accepts a strong new password that differs from the current password", () => {
+    expect(validateRestaurantPasswordChange("Temporary!aA9", "NewStrong!Password42", "NewStrong!Password42")).toBeNull();
+  });
+
+  it("rejects passwords that are too short, too long, or miss required character classes", () => {
+    expect(validateRestaurantPasswordChange("old", "Short!A1", "Short!A1")).toBe("weak_password");
+    expect(validateRestaurantPasswordChange("old", "a".repeat(129) + "A1!", "a".repeat(129) + "A1!")).toBe("weak_password");
+    expect(validateRestaurantPasswordChange("old", "lowercaseonly123!", "lowercaseonly123!")).toBe("weak_password");
+  });
+
+  it("rejects mismatched confirmation", () => {
+    expect(validateRestaurantPasswordChange("old", "NewStrong!Password42", "NewStrong!Password43")).toBe("password_mismatch");
+  });
+
+  it("rejects reusing the current or temporary password", () => {
+    expect(validateRestaurantPasswordChange("Temporary!aA9", "Temporary!aA9", "Temporary!aA9")).toBe("must_differ_from_current");
+    expect(validateRestaurantPasswordChange("", "NewStrong!Password42", "NewStrong!Password42")).toBe("must_differ_from_current");
   });
 });
