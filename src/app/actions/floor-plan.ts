@@ -102,7 +102,7 @@ export type BatchQrItem = { tableId: string; tableLabel: string; url: string };
 export type BatchQrState = { error?: string; items?: BatchQrItem[] };
 
 export async function issueTableQrBatchAction(_previous: BatchQrState, formData: FormData): Promise<BatchQrState> {
-  const user=await requireOwnerSession();
+  await requireOwnerSession();
   const tenantId=String(formData.get("tenant_id")??"");
   const branchId=String(formData.get("branch_id")??"");
   const tableIds=[...new Set(formData.getAll("table_id").map(v=>String(v)).filter(Boolean))];
