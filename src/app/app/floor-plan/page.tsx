@@ -4,6 +4,7 @@ import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
 import { signOutAction } from "@/app/actions/auth";
 import { createCafeTableAction, createSeatingZoneAction, revokeTableQrAction } from "@/app/actions/floor-plan";
 import { QrIssueForm } from "@/app/app/floor-plan/qr-issue-form";
+import { FloorPlanEditor } from "@/app/app/floor-plan/floor-plan-editor";
 
 type Membership={id:string;tenant_id:string};
 type Tenant={id:string;name:string;slug:string;status:string};
@@ -11,6 +12,7 @@ type Branch={id:string;tenant_id:string;name:string;timezone:string;status:strin
 type Zone={id:string;tenant_id:string;branch_id:string;name:string;status:string};
 type CafeTable={id:string;tenant_id:string;branch_id:string;zone_id:string|null;label:string;capacity:number;shape:string;x:number;y:number;width:number;height:number;rotation:number;status:string};
 type QR={id:string;table_id:string;status:string;created_at:string;revoked_at:string|null};
+type Layout={id:string;tenant_id:string;branch_id:string;version:number;canvas_width:number;canvas_height:number;coordinate_system:string};
 
 export default async function FloorPlanPage({searchParams}:{searchParams:Promise<Record<string,string|undefined>>}) {
  const user=await getCurrentUser();
@@ -35,6 +37,9 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
   supabaseRequest<QR[]>(`/rest/v1/table_qr_credentials?select=id,table_id,status,created_at,revoked_at&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&order=created_at.desc`)
  ]):[{data:[] as Zone[]},{data:[] as CafeTable[]},{data:[] as QR[]}];
  const zones=zonesResult.data??[], tables=tablesResult.data??[], qrs=qrResult.data??[];
+ const layoutResult=tenantId&&branchId?await supabaseRequest<Layout[]>(`/rest/v1/floor_plan_layouts?select=id,tenant_id,branch_id,version,canvas_width,canvas_height,coordinate_system&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&limit=1`):{data:[] as Layout[],error:null,status:200};
+ let layout=layoutResult.data?.[0]??null;
+ if(tenantId&&branchId&&!layout){const made=await supabaseRequest<Layout[]>("/rest/v1/floor_plan_layouts",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({tenant_id:tenantId,branch_id:branchId,version:1,updated_by:user.id})});layout=made.data?.[0]??null;}
  return <main className="mx-auto min-h-screen max-w-7xl px-5 py-7 sm:px-8">
   <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
    <div><Link href="/app" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></Link><p className="mt-1 text-xs text-[var(--muted)]">Phase 03 · Branches, tables & floor plans</p></div>
@@ -60,6 +65,7 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
    </div>:<p className="rounded-xl border border-[var(--border)] p-5 text-sm">Select an active branch to manage its tables.</p>}
   </>}
   <section className="mt-6 rounded-2xl border border-dashed border-[var(--border)] p-5"><h2 className="font-semibold">Floor plan preview</h2><p className="mt-1 text-sm text-[var(--muted)]">Tables currently store normalized logical coordinates. Interactive drag, resize, rotation, optimistic layout editing and print-ready QR artwork are still pending in this Phase 03 branch.</p><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{tables.slice(0,8).map(t=><div key={t.id} className="grid min-h-24 place-items-center rounded-2xl border border-[var(--border)] bg-white p-3 text-center" style={{transform:"rotate("+t.rotation+"deg)"}}><span className="text-sm font-semibold">{t.label}</span><span className="text-xs text-[var(--muted)]">{t.capacity} seats</span></div>)}</div></section>
+  {tenantId&&branchId&&layout&&<FloorPlanEditor tenantId={tenantId} branchId={branchId} version={layout.version} tables={tables}/>}
   <footer className="mt-10 border-t border-[var(--border)] py-5 text-xs text-[var(--muted)]">CafeOS Phase 03 · QR codes are access credentials, not staff access or ordering authorization.</footer>
  </main>;
 }
