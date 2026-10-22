@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 export default async function WelcomePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?notice=Confirm%20your%20email%20or%20sign%20in%20to%20continue");
-  const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "CafeOS founder";
   return (
     <main className="welcome-stage">
       <div className="welcome-confetti" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
