@@ -18,7 +18,7 @@ export function LoginShowcase() {
     <section className="login-showcase" aria-label="CafeOS product highlights">
       <div className="showcase-slides">
         {slides.map((slide, index) => (
-          <article key={slide.tag} className={"showcase-slide " + (active === index ? "is-active" : "")} aria-hidden={active !== index}>
+          <article key={slide.tag} className={active === index ? "showcase-slide is-active" : "showcase-slide"} aria-hidden={active !== index}>
             <div className="showcase-image" style={{ backgroundImage: 'linear-gradient(180deg,rgba(13,31,22,.04) 10%,rgba(13,31,22,.76) 100%),url("' + slide.image + '")' }} />
             <div className="showcase-copy">
               <span className="showcase-kicker"><i /> {slide.kicker}</span>
