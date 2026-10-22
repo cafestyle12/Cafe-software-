@@ -54,8 +54,11 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
   const currentPassword = String(formData.get("current_password") ?? "");
-  if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password) || password !== confirm) {
-    redirect("/change-password?error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
+  if (password.length < 12 || password.length > 128 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password) || password !== confirm) {
+    redirect("/change-password?error=Use%20a%20matching%20password%20of%2012%E2%80%93128%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
+  }
+  if (!currentPassword || currentPassword === password) {
+    redirect("/change-password?error=Enter%20your%20current%20password%20and%20choose%20a%20different%20new%20password");
   }
 
   const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
@@ -63,30 +66,42 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const user = await getCurrentUser();
   const accessToken = await currentAccessToken();
   if (!user || !accessToken) redirect("/login?error=Please%20sign%20in%20again");
-  const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string } }).app_metadata;
-  const firstLogin = appMetadata?.must_change_password === true;
 
   const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!cfgUrl || !cfgKey) redirect("/change-password?error=Authentication%20is%20not%20configured");
 
-  if (!firstLogin) {
-    if (currentPassword.length < 1) redirect("/change-password?error=Enter%20your%20current%20password");
-    const accounts = await adminFetch<Array<{ auth_email: string; status: string }>>(
-      `/rest/v1/restaurant_auth_accounts?select=auth_email,status&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-    );
-    const account = accounts.data?.[0];
-    if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
-    const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
-    if (!reauth.ok) redirect("/change-password?error=Current%20password%20is%20incorrect");
+  const accounts = await adminFetch<Array<{ auth_email: string; status: string; must_change_password: boolean }>>(
+    `/rest/v1/restaurant_auth_accounts?select=auth_email,status,must_change_password&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+  );
+  const account = accounts.data?.[0];
+  if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
+
+  const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string; cafeos_account_type?: string } }).app_metadata ?? {};
+  const firstLogin = account.must_change_password || appMetadata.must_change_password === true;
+  if (appMetadata.cafeos_account_type !== "restaurant_owner") redirect("/login?error=Account%20is%20unavailable");
+
+  // Reauthenticate for both first-login and later changes. The first-login form
+  // asks for the temporary password so choosing that same password is rejected.
+  const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
+  if (!reauth.ok || reauth.payload?.user?.id !== user.id) {
+    redirect("/change-password?error=Current%20password%20is%20incorrect");
   }
 
-  const updated = await adminFetch<{ id: string }>(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+  // Reconcile stale metadata to the restrictive state before touching the password.
+  if (firstLogin && appMetadata.must_change_password !== true) {
+    const lockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: true, account_status: "active" } }),
+    });
+    if (!lockedMetadata.ok) redirect("/change-password?error=Could%20not%20securely%20prepare%20the%20first-login%20password%20change.%20Please%20retry");
+  }
+
+  // Keep must_change_password=true in Auth metadata until the DB update succeeds.
+  // This makes partial failures fail closed at both middleware and RLS boundaries.
+  const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
     method: "PUT",
-    body: JSON.stringify({
-      password,
-      app_metadata: { ...(appMetadata ?? {}), must_change_password: false, account_status: "active" },
-    }),
+    body: JSON.stringify({ password }),
   });
   if (!updated.ok) redirect("/change-password?error=Password%20could%20not%20be%20updated.%20Please%20try%20again");
 
@@ -95,9 +110,24 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
     { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: false, password_changed_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
   );
   if (!profileUpdate.ok || !profileUpdate.data?.length) {
-    // The Auth password changed, but fail closed at the database membership gate until the flag is reconciled.
-    redirect("/change-password?error=Password%20changed%2C%20but%20account%20activation%20is%20pending.%20Please%20contact%20CafeOS%20support");
+    redirect("/change-password?error=Password%20changed%2C%20but%20the%20account%20is%20still%20locked%20for%20safety.%20Contact%20CafeOS%20support");
   }
+
+  const unlockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: false, account_status: "active" } }),
+  });
+  if (!unlockedMetadata.ok) {
+    // RLS also checks the signed JWT claim; keep this session and any future
+    // token carrying must_change_password=true denied until a successful retry.
+    await adminFetch(`/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ must_change_password: true, updated_at: new Date().toISOString() }),
+    });
+    redirect("/change-password?error=Password%20changed%2C%20but%20activation%20is%20pending.%20Please%20retry%20or%20contact%20CafeOS%20support");
+  }
+
   await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
     method: "POST",
     headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
