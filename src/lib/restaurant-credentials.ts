@@ -16,3 +16,12 @@ export function generateTemporaryPassword() {
 export function generateInternalAuthEmail() {
   return `${randomBytes(16).toString("hex")}@auth.cafeos.invalid`;
 }
+
+export function validateRestaurantPasswordChange(currentPassword: string, password: string, confirmation: string) {
+  if (password.length < 12 || password.length > 128 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return "weak_password" as const;
+  }
+  if (password !== confirmation) return "password_mismatch" as const;
+  if (!currentPassword || password === currentPassword) return "must_differ_from_current" as const;
+  return null;
+}
