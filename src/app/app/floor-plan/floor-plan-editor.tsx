@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { saveFloorPlanAction, type SaveFloorPlanState } from "@/app/actions/floor-plan-layout";
 
-type TableItem={id:string;label:string;capacity:number;shape:string;x:number;y:number;width:number;height:number;rotation:number};
+type TableItem={id:string;label:string;capacity:number;shape:string;x:number;y:number;width:number;height:number;rotation:number;status:string};
 const initial:SaveFloorPlanState={};
 
 export function FloorPlanEditor({tenantId,branchId,version,tables}:{tenantId:string;branchId:string;version:number;tables:TableItem[]}) {
