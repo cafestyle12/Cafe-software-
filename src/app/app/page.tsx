@@ -7,7 +7,7 @@ type Membership = { id: string; tenant_id: string; status: string };
 type Tenant = { id: string; name: string; slug: string; status: string; created_at: string };
 type Branch = { id: string; tenant_id: string; name: string; timezone: string; currency: string; status: string };
 
-type Props = { searchParams: Promise<{ created?: string; passwordUpdated?: string }> };
+type Props = { searchParams: Promise<{ created?: string; passwordUpdated?: string; inviteAccepted?: string; error?: string }> };
 
 export default async function AppHomePage({ searchParams }: Props) {
   const user = await getCurrentUser();
@@ -50,6 +50,8 @@ export default async function AppHomePage({ searchParams }: Props) {
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">Your authenticated CafeOS workspace hub. Tenant-scoped operations will appear here as the next phases are completed.</p>
         {params.created && <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">Workspace and first branch created successfully.</p>}
         {params.passwordUpdated && <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">Your password was updated.</p>}
+        {params.inviteAccepted && <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">Invitation accepted. You now have access to the workspace.</p>}
+        {params.error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{params.error}</p>}
       </section>
       <section>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-xl font-semibold">Your workspaces</h2><p className="mt-1 text-sm text-[var(--muted)]">Only workspaces where your membership is active are shown.</p></div><Link href="/onboarding" className="rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">Set up another café</Link></div>
@@ -61,6 +63,7 @@ export default async function AppHomePage({ searchParams }: Props) {
                 <div className="mt-5 space-y-3">
                   {(branchesByTenant[tenant.id] ?? []).map((branch) => <div key={branch.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3"><div><p className="text-sm font-medium">{branch.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{branch.timezone} · {branch.currency}</p></div><span className="text-xs text-[var(--muted)]">Branch</span></div>)}
                   {(branchesByTenant[tenant.id] ?? []).length === 0 && <p className="text-sm text-[var(--muted)]">No active branches found.</p>}
+                  <Link href={`/app/members?tenant=${tenant.id}`} className="inline-flex rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Manage team</Link>
                 </div>
               </article>
             ))}
