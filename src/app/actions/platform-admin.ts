@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
@@ -81,6 +81,7 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
   const restaurantId = generateRestaurantId();
   const temporaryPassword = generateTemporaryPassword();
   const authEmail = generateInternalAuthEmail();
+  const sessionVersion = randomUUID();
   const slugBase = restaurantName.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 55) || "restaurant";
   const slug = `${slugBase}-${createHash("sha256").update(restaurantId).digest("hex").slice(0, 8)}`;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -94,7 +95,7 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
       password: temporaryPassword,
       email_confirm: true,
       user_metadata: { full_name: ownerName },
-      app_metadata: { cafeos_account_type: "restaurant_owner", must_change_password: true, account_status: "active" },
+      app_metadata: { cafeos_account_type: "restaurant_owner", must_change_password: true, account_status: "active", session_version: sessionVersion },
     }),
   });
   const authUserId = created.data?.id ?? created.data?.user?.id;
@@ -112,6 +113,7 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
       p_slug: slug,
       p_branch_name: branchName,
       p_display_name: ownerName,
+      p_session_version: sessionVersion,
     }),
   });
   if (!provisioned.ok || !provisioned.data?.length) {
@@ -136,16 +138,17 @@ export async function resetRestaurantPasswordAction(_previous: ResetPasswordStat
   const account = accounts.data?.[0];
   if (!accounts.ok || !account || account.status === "deactivated") return { error: "Restaurant account was not found or is deactivated." };
   const password = generateTemporaryPassword();
+  const sessionVersion = randomUUID();
   const locked = await adminFetch<Array<{ tenant_id: string }>>(
     `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(account.auth_user_id)}`,
-    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: true, credential_reset_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: true, credential_reset_at: new Date().toISOString(), session_version: sessionVersion, updated_at: new Date().toISOString() }) },
   );
   if (!locked.ok || !locked.data?.length) return { error: "Could not lock the account for credential reset." };
   const user = await adminFetch<{ app_metadata?: Record<string, unknown>; user?: { app_metadata?: Record<string, unknown> } }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
   if (!user.ok || !user.data) return { error: "Account is safely locked, but Auth metadata could not be read. Retry after checking the Supabase secret." };
   const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
     method: "PUT",
-    body: JSON.stringify({ password, app_metadata: { ...(user.data?.user?.app_metadata ?? user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status } }),
+    body: JSON.stringify({ password, app_metadata: { ...(user.data?.user?.app_metadata ?? user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status, cafeos_account_type: "restaurant_owner", session_version: sessionVersion } }),
   });
   if (!updated.ok) return { error: "Account is locked for safety but password reset failed. Retry the reset." };
   await adminFetch("/rest/v1/audit_events", {
@@ -164,8 +167,9 @@ export async function changeRestaurantStatusAction(formData: FormData) {
   );
   const account = accounts.data?.[0];
   if (!accounts.ok || !account) redirect("/platform-admin?error=Restaurant%20account%20was%20not%20found");
+  const sessionVersion = randomUUID();
   const changed = await adminFetch<Array<{ tenant_id: string }>>("/rest/v1/rpc/admin_set_restaurant_status", {
-    method: "POST", body: JSON.stringify({ p_tenant_id: account.tenant_id, p_status: status }),
+    method: "POST", body: JSON.stringify({ p_tenant_id: account.tenant_id, p_status: status, p_session_version: sessionVersion }),
   });
   if (!changed.ok) redirect("/platform-admin?error=Could%20not%20update%20restaurant%20status.%20Confirm%20the%20migration%20is%20applied");
   const user = await adminFetch<{ app_metadata?: Record<string, unknown>; user?: { app_metadata?: Record<string, unknown> } }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
@@ -173,7 +177,7 @@ export async function changeRestaurantStatusAction(formData: FormData) {
   const metaStatus = status === "active" ? "active" : status;
   const appMetadata = user.data.user?.app_metadata ?? user.data.app_metadata ?? {};
   const meta = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
-    method: "PUT", body: JSON.stringify({ app_metadata: { ...appMetadata, account_status: metaStatus } }),
+    method: "PUT", body: JSON.stringify({ app_metadata: { ...appMetadata, cafeos_account_type: "restaurant_owner", account_status: metaStatus, session_version: sessionVersion } }),
   });
   await adminFetch("/rest/v1/audit_events", {
     method: "POST", headers: { Prefer: "return=minimal" },
