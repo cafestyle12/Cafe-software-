@@ -162,8 +162,8 @@ export async function revokeTableQrAction(formData: FormData) {
   const branchId=String(formData.get("branch_id")??"");
   const credentialId=String(formData.get("credential_id")??"");
   if(!tenantId||!branchId||!credentialId) redirect("/app/floor-plan?error=Missing%20QR%20details");
-  const result=await supabaseRequest(`/rest/v1/table_qr_credentials?id=eq.${encodeURIComponent(credentialId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"revoked",revoked_at:new Date().toISOString()})});
-  if(result.error) redirect("/app/floor-plan?error=Could%20not%20revoke%20QR");
+  const result=await supabaseRequest("/rest/v1/rpc/revoke_table_qr",{method:"POST",body:JSON.stringify({p_tenant_id:tenantId,p_branch_id:branchId,p_credential_id:credentialId})});
+  if(result.error) redirect("/app/floor-plan?error=Could%20not%20revoke%20QR%20or%20its%20active%20sessions");
   revalidatePath("/app/floor-plan");
   redirect("/app/floor-plan?qrRevoked=1");
 }
