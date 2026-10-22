@@ -13,95 +13,103 @@ function emailIsValid(email: string) {
 }
 
 export async function signInAction(formData: FormData) {
-  const email = value(formData, "email").toLowerCase();
+  const restaurantId = value(formData, "restaurant_id").toUpperCase().replace(/\s+/g, "");
   const password = String(formData.get("password") ?? "");
-  if (!emailIsValid(email) || password.length < 1) redirect("/login?error=Enter%20a%20valid%20email%20and%20password");
-  const attempt = await consumeAuthAttempt("login");
-  if (!attempt.allowed) redirect("/login?error=You%20have%20used%205%20login%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
-  const result = await authApi("/auth/v1/token?grant_type=password", { email, password });
-  if (!result.ok) {
-    const suffix = attempt.remaining > 0 ? " " + attempt.remaining + " attempt(s) remaining before a 15-minute cooldown." : " No attempts remain; wait 15 minutes before trying again.";
-    redirect("/login?error=" + encodeURIComponent(result.error + suffix));
+  if (!/^CAFE-[A-Z0-9]{4}-[A-Z0-9]{8}$/.test(restaurantId) || password.length < 1) {
+    redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   }
-  if (!result.payload?.access_token || !result.payload.refresh_token) redirect("/login?error=Sign-in%20could%20not%20start%20a%20session");
+
+  const { headers } = await import("next/headers");
+  const { adminFetch, consumeRestaurantLoginLimit, clearRestaurantLoginLimit } = await import("@/lib/supabase/restaurant-auth");
+  const requestHeaders = await headers();
+  const ip = requestHeaders.get("x-real-ip") ?? requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await consumeRestaurantLoginLimit(restaurantId, ip);
+  if (!limit.ok || !limit.decision) {
+    redirect("/login?error=Sign%20in%20is%20temporarily%20unavailable.%20Please%20try%20again%20later");
+  }
+  if (!limit.decision.allowed) {
+    redirect("/login?error=Too%20many%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
+  }
+
+  const accounts = await adminFetch<Array<{ tenant_id: string; auth_user_id: string; auth_email: string; status: string; must_change_password: boolean }>>(
+    `/rest/v1/restaurant_auth_accounts?select=tenant_id,auth_user_id,auth_email,status,must_change_password&restaurant_id=eq.${encodeURIComponent(restaurantId)}&limit=1`,
+  );
+  const account = accounts.data?.[0];
+  if (!accounts.ok || !account || account.status !== "active") {
+    redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
+  }
+
+  const result = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password });
+  if (!result.ok || !result.payload?.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id) {
+    redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
+  }
+  await clearRestaurantLoginLimit(limit.keys);
   await clearAuthAttempts("login");
   await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
+  const appMetadata = (result.payload.user as { app_metadata?: { must_change_password?: boolean; account_status?: string } }).app_metadata;
+  if (account.must_change_password || appMetadata?.must_change_password === true) redirect("/change-password?first=1");
   redirect("/app");
 }
 
-export async function signUpAction(formData: FormData) {
-  const name = value(formData, "full_name");
-  const email = value(formData, "email").toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  if (name.length < 2 || name.length > 120 || !emailIsValid(email) || password.length < 10) {
-    redirect("/signup?error=Enter%20your%20name%2C%20a%20valid%20email%2C%20and%20a%20password%20of%20at%20least%2010%20characters");
-  }
-  const attempt = await consumeAuthAttempt("signup");
-  if (!attempt.allowed) redirect("/signup?error=You%20have%20used%205%20account%20creation%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
-  const baseUrl = siteUrl();
-  if (!baseUrl) redirect("/signup?error=The%20site%20URL%20is%20not%20configured");
-  const redirectTo = `${baseUrl}/auth/confirm`;
-  const result = await authApi(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
-    email,
-    password,
-    data: { full_name: name },
-  });
-  if (!result.ok) {
-    const suffix = attempt.remaining > 0 ? " " + attempt.remaining + " attempt(s) remaining before a 15-minute cooldown." : " No attempts remain; wait 15 minutes before trying again.";
-    redirect(`/signup?error=${encodeURIComponent(result.error + suffix)}`);
-  }
-  // Supabase can return HTTP 200 for a repeated signup without sending a new email.
-  // An empty identities array is its documented signal that this email already exists.
-  const signupUser = result.payload?.user as ({ identities?: unknown[] } | undefined);
-  if (signupUser?.identities?.length === 0) {
-    redirect("/signup?notice=An%20account%20may%20already%20exist%20for%20this%20email.%20Use%20Resend%20confirmation%20below%20instead%20of%20creating%20it%20again.%20If%20no%20email%20arrives%2C%20the%20Supabase%20email%20provider%20needs%20configuration");
-  }
-  await clearAuthAttempts("signup");
-  if (result.payload?.access_token && result.payload.refresh_token) {
-    await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
-    redirect("/welcome");
-  }
-  redirect("/signup?notice=Account%20request%20received.%20If%20the%20confirmation%20email%20does%20not%20arrive%20within%20a%20few%20minutes%2C%20check%20spam%20and%20promotions%2C%20then%20use%20Resend%20confirmation.%20If%20it%20still%20does%20not%20arrive%2C%20the%20CafeOS%20email%20provider%20needs%20configuration");
-}
 
-export async function requestPasswordResetAction(formData: FormData) {
-  const email = value(formData, "email").toLowerCase();
-  if (!emailIsValid(email)) redirect("/forgot-password?error=Enter%20a%20valid%20email%20address");
-  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const baseUrl = siteUrl();
-  if (!cfgUrl || !cfgKey || !baseUrl) redirect("/forgot-password?error=Authentication%20redirect%20is%20not%20configured");
-  const response = await fetch(`${cfgUrl.replace(/\/$/, "")}/auth/v1/recover?redirect_to=${encodeURIComponent(baseUrl + "/auth/confirm")}`, {
-    method: "POST",
-    headers: { apikey: cfgKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    const details = await response.json().catch(() => ({})) as { msg?: string; message?: string; error_code?: string };
-    if (response.status === 429 || details.error_code === "over_email_send_rate_limit") redirect("/forgot-password?error=Email%20provider%20rate%20limit%20reached.%20Wait%20a%20few%20minutes%20before%20retrying");
-    redirect("/forgot-password?error=Email%20could%20not%20be%20sent.%20Check%20Supabase%20SMTP%20settings%2C%20sender%20verification%2C%20and%20Auth%20logs");
-  }
-  redirect("/forgot-password?sent=1");
-}
 
-export async function updatePasswordAction(formData: FormData) {
+
+
+export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
-  if (password.length < 10 || password !== confirm) redirect("/reset-password?error=Passwords%20must%20match%20and%20contain%20at%20least%2010%20characters");
-  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const { currentAccessToken } = await import("@/lib/supabase/auth");
+  const currentPassword = String(formData.get("current_password") ?? "");
+  if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password) || password !== confirm) {
+    redirect("/change-password?error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
+  }
+
+  const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
+  const { adminFetch } = await import("@/lib/supabase/restaurant-auth");
+  const user = await getCurrentUser();
   const accessToken = await currentAccessToken();
-  if (!cfgUrl || !cfgKey || !accessToken) redirect("/login?error=Your%20recovery%20session%20expired.%20Request%20a%20new%20link");
-  const response = await fetch(`${cfgUrl.replace(/\/$/, "")}/auth/v1/user`, {
+  if (!user || !accessToken) redirect("/login?error=Please%20sign%20in%20again");
+  const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string } }).app_metadata;
+  const firstLogin = appMetadata?.must_change_password === true;
+
+  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!cfgUrl || !cfgKey) redirect("/change-password?error=Authentication%20is%20not%20configured");
+
+  if (!firstLogin) {
+    if (currentPassword.length < 1) redirect("/change-password?error=Enter%20your%20current%20password");
+    const accounts = await adminFetch<Array<{ auth_email: string; status: string }>>(
+      `/rest/v1/restaurant_auth_accounts?select=auth_email,status&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+    );
+    const account = accounts.data?.[0];
+    if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
+    const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
+    if (!reauth.ok) redirect("/change-password?error=Current%20password%20is%20incorrect");
+  }
+
+  const updated = await adminFetch<{ id: string }>(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
     method: "PUT",
-    headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
-    cache: "no-store",
+    body: JSON.stringify({
+      password,
+      app_metadata: { ...(appMetadata ?? {}), must_change_password: false, account_status: "active" },
+    }),
   });
-  if (!response.ok) redirect("/reset-password?error=Password%20could%20not%20be%20updated.%20Request%20a%20new%20recovery%20link");
-  redirect("/app?passwordUpdated=1");
+  if (!updated.ok) redirect("/change-password?error=Password%20could%20not%20be%20updated.%20Please%20try%20again");
+
+  const profileUpdate = await adminFetch<Array<{ tenant_id: string }>>(
+    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: false, password_changed_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
+  );
+  if (!profileUpdate.ok || !profileUpdate.data?.length) {
+    // The Auth password changed, but fail closed at the database membership gate until the flag is reconciled.
+    redirect("/change-password?error=Password%20changed%2C%20but%20account%20activation%20is%20pending.%20Please%20contact%20CafeOS%20support");
+  }
+  const logout = await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
+    method: "POST",
+    headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  }).catch(() => null);
+  await clearAuthSession();
+  redirect("/login?notice=Password%20updated.%20Please%20sign%20in%20with%20your%20new%20password");
 }
 
 export async function completeAuthSessionAction(accessToken: string, refreshToken: string, type: string, inviteId = "") {
