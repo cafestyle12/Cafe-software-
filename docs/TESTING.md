@@ -79,3 +79,11 @@ The latest READY Vercel preview inspected is behind the current branch head, and
 - Verified create_tenant_with_branch and tenants INSERT are not granted to anon/authenticated; verified no browser-role TRUNCATE, REFERENCES or TRIGGER grants remain on public tables.
 - Ran transaction-only SQL tests and rolled them back: five login attempts allowed and sixth blocked; first-login owner denied; active mapped owner allowed; stale session_version denied; suspended account/tenant denied; legacy email-only session denied; profile sharing gated by the same owner membership helper.
 - CI run #431 passed install, lint, typecheck, unit tests and production build on commit b189c1394cc2ec17189a3315c711a67ac6fca1c8. Live Auth Admin API provisioning, actual login, password update and browser session flows have NOT been tested because Preview server secrets are missing and the Vercel deployment API denies a new Preview deployment.
+
+
+## Phase 03 verification status
+- Supabase migration `phase_03_branches_tables_floor_qr` applied successfully.
+- SQL inspection confirmed RLS and FORCE RLS enabled for `seating_zones`, `cafe_tables`, `floor_plan_layouts`, `table_qr_credentials`, and `table_sessions`.
+- `resolve_table_qr` smoke test with an invalid token returned a generic invalid row and no private tenant data.
+- Unit tests were added for user-selected Restaurant ID validation (examples include `YASHCAFE01` and `CAFE-FIROZABAD-01`; IDs are uppercased and limited to 3–32 letters/numbers/hyphens/underscores). CI has not yet been inspected for this branch.
+- Pending acceptance tests: cross-tenant direct REST attempts; table/zone CRUD persistence; duplicate constraints; floor-plan optimistic concurrency; QR active/revoked real token; QR file decoding; session idempotency/expiry/revocation; lint/typecheck/unit/build and deployed SHA smoke test.
