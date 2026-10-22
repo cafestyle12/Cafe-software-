@@ -58,3 +58,9 @@ The current code expects these variables in Vercel **Preview only** for the Phas
 Do not send secret values through chat or commit them. The connected environment tooling has not verified these values. The code change is not accepted until the latest CI is green and the deployed Preview SHA matches the branch.
 
 Restaurant ID login is a server-side mapping to a random `.invalid` Supabase Auth email identity, because Supabase password auth requires email or phone. Provisioned identities are marked confirmed using the supported Admin API; this does not mean global email confirmation is disabled. Provisioning, resets, status changes and password changes must keep the Auth `app_metadata.session_version` aligned with `restaurant_auth_accounts.session_version`; stale version cookies/JWTs must be rejected. No production deployment or merge is authorized. Phase 03 has not started.
+
+
+## Phase 03 Preview deployment
+- Development branch: `phase-03/branches-tables-floor-qr`.
+- Supabase migration `phase_03_branches_tables_floor_qr` is applied to the connected project. The app needs `NEXT_PUBLIC_SITE_URL` set to the intended public application origin for QR URLs; do not substitute localhost or assume the production domain.
+- No Phase 03 Vercel deployment has been verified. Do not merge or deploy production without explicit authorization. Verify CI and deploy the branch to Preview before end-to-end QR testing.
