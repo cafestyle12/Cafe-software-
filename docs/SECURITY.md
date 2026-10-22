@@ -25,3 +25,8 @@ Last audited: 2026-10-22
 3. Test only with controlled inboxes and low volume.
 4. Review logs without recording passwords, tokens, session cookies, SMTP credentials or secret keys.
 5. Re-run CI and authenticated RLS/session tests before merging or deploying production.
+
+
+## Latest advisor recheck — 2026-10-22
+- Supabase Security Advisor now reports a warning: **Leaked Password Protection Disabled**. Enable the HaveIBeenPwned-based leaked-password protection in Supabase Auth password-security settings before production acceptance.
+- The performance advisor reports nine unused-index informational notices on the currently empty/low-workload schema. Keep the indexes unless workload evidence justifies removal; unused does not mean unsafe.
