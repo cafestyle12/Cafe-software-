@@ -131,3 +131,5 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Latest READY Vercel preview observed was commit `7bcbd2f2d35cb0260b373085dd7695267ef1dea6`, which is behind the current branch head. The latest commit's Vercel check reports a build-rate-limit failure. No production deployment or merge was performed.
 - Live provisioning/login and actual `.invalid` alias acceptance remain unverified because the server-only Supabase secret and platform-admin token are not confirmed configured, and the latest branch head is not deployed.
 - Phase 03 has not started.
+
+- Additional database security checks: migration 20261022094252 revoked direct tenant INSERT and gated same-tenant profile visibility; migration 20261022094402 removed TRUNCATE/REFERENCES/TRIGGER from browser roles and removed all anon table grants. Post-migration privilege queries confirmed no browser-role TRUNCATE grants and no browser-role tenant INSERT.
