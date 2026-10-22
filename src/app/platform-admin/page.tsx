@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { loginPlatformAdminAction, logoutPlatformAdminAction, resetRestaurantPasswordAction, changeRestaurantStatusAction } from "@/app/actions/platform-admin";
 import { adminFetch } from "@/lib/supabase/restaurant-auth";
@@ -22,7 +23,7 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
   if (!authorized) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-6 py-12">
-        <a href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></a>
+        <Link href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></Link>
         <section className="mt-8 rounded-3xl border border-[var(--border)] bg-white p-7 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Restricted access</p>
           <h1 className="mt-3 text-3xl font-semibold">Platform administration</h1>
@@ -54,7 +55,7 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-8 sm:px-10">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
-        <div><a href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></a><p className="mt-1 text-sm text-[var(--muted)]">Platform administration</p></div>
+        <div><Link href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></Link><p className="mt-1 text-sm text-[var(--muted)]">Platform administration</p></div>
         <form action={logoutPlatformAdminAction}><button className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Lock admin session</button></form>
       </header>
       <section className="py-8">
