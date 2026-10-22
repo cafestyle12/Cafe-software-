@@ -31,8 +31,8 @@ export function ProvisionRestaurantForm() {
           <input name="branch_name" required minLength={2} maxLength={120} className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3" placeholder="Main Branch" />
         </label>
         <label className="text-sm font-medium">Restaurant ID (you choose)
-          <input name="restaurant_id" required minLength={19} maxLength={19} pattern="CAFE-[A-Za-z0-9]{4}-[A-Za-z0-9]{8}" title="Use format CAFE-AB12-34CD56EF" autoCapitalize="characters" className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3 uppercase" placeholder="CAFE-AB12-34CD56EF" />
-          <span className="mt-1 block text-xs text-[var(--muted)]">Format: CAFE-AB12-34CD56EF. Must be unique.</span>
+          <input name="restaurant_id" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,31}" title="Use 3–32 letters, numbers, hyphens or underscores; start with a letter or number" autoCapitalize="characters" className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3 uppercase" placeholder="YASHCAFE01" />
+          <span className="mt-1 block text-xs text-[var(--muted)]">Use 3–32 letters/numbers, hyphens or underscores. Must be unique.</span>
         </label>
         <label className="text-sm font-medium">Initial password (you choose)
           <input name="initial_password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3" placeholder="Create a strong password" />
