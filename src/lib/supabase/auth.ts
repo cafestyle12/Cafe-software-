@@ -137,5 +137,9 @@ export async function authApi(path: string, body: unknown) {
 }
 
 export function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  const vercelHost = process.env.NEXT_PUBLIC_VERCEL_URL;
+  if (configured) return configured.replace(/\/$/, "");
+  if (vercelHost) return (vercelHost.startsWith("http") ? vercelHost : `https://${vercelHost}`).replace(/\/$/, "");
+  return process.env.NODE_ENV === "production" ? "" : "http://localhost:3000";
 }
