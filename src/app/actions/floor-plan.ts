@@ -120,7 +120,7 @@ export async function issueTableQrBatchAction(_previous: BatchQrState, formData:
   const tenantId=String(formData.get("tenant_id")??"");
   const branchId=String(formData.get("branch_id")??"");
   const tableIds=[...new Set(formData.getAll("table_id").map(v=>String(v)).filter(Boolean))];
-  if(!tenantId||!branchId||tableIds.length<1||tableIds.length>50||tableIds.some(id=>!/^[0-9a-f-]{36}$/i.test(id))) return {error:"Select between 1 and 50 valid tables."};
+  if(!tenantId||!branchId||tableIds.length<1||tableIds.length>50||tableIds.some(id=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) return {error:"Select between 1 and 50 valid tables."};
   const baseUrl=siteUrl();
   if(!baseUrl) return {error:"The site URL is not configured. No QR credentials were issued."};
   const inFilter=tableIds.map(id=>encodeURIComponent(id)).join(",");
