@@ -30,9 +30,9 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
           <h1 className="mt-3 text-3xl font-semibold">Platform administration</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Only the CafeOS platform administrator can provision, suspend or reset restaurant owner accounts.</p>
           {params.error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-800">{params.error}</p>}
-          {!expected || expected.length < 32 ? <p role="alert" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Setup required: add a random 32+ character CAFEOS_PLATFORM_ADMIN_TOKEN and a server-only Supabase secret to Vercel Preview environment variables.</p> : (
+          {!expected || expected.length < 10 ? <p role="alert" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Setup required: set CAFEOS_PLATFORM_ADMIN_TOKEN to a password of at least 10 characters and configure a server-only Supabase secret in the Vercel environment.</p> : (
             <form action={loginPlatformAdminAction} className="mt-5 space-y-4">
-              <label className="block text-sm font-medium">Administrator access token
+              <label className="block text-sm font-medium">Administrator password
                 <input name="admin_token" type="password" required autoComplete="current-password" className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3" />
               </label>
               <button className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white">Unlock administration</button>
