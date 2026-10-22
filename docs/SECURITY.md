@@ -30,3 +30,13 @@ Last audited: 2026-10-22
 ## Latest advisor recheck — 2026-10-22
 - Supabase Security Advisor now reports a warning: **Leaked Password Protection Disabled**. Enable the HaveIBeenPwned-based leaked-password protection in Supabase Auth password-security settings before production acceptance.
 - The performance advisor reports nine unused-index informational notices on the currently empty/low-workload schema. Keep the indexes unless workload evidence justifies removal; unused does not mean unsafe.
+
+
+## Restaurant ID authentication rebuild — 2026-10-22
+- Supabase password auth still uses a provider identity internally. CafeOS resolves Restaurant ID server-side to a random, non-deliverable @auth.cafeos.invalid alias and never sends that alias to the browser.
+- The platform admin token and Supabase secret must be configured as server-only Vercel Preview variables. They are not currently confirmed configured, so live provisioning/login cannot yet be accepted.
+- The new mapping and rate-limit tables have no grants to anon/authenticated. Admin provisioning/status RPCs are restricted to service_role. Review and apply the additive migration before using the new routes.
+- First-login change and account status are checked by middleware and by the tenant RLS helper. RLS blocks mapped owners while password change is required or the account/tenant is inactive.
+- Public signup, password-recovery email route, resend-confirmation action and confirmation callback are removed. Existing email invitations are disabled at the action boundary; pending invitation records are preserved.
+- Global Supabase email-confirmation settings were not changed blindly. Provisioned Auth users use the supported admin create-user API with email_confirm: true.
+- Remaining known issue: leaked-password protection is disabled in Supabase Auth; enable it before production.
