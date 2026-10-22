@@ -40,3 +40,10 @@ Last audited: 2026-10-22
 - Public signup, password-recovery email route, resend-confirmation action and confirmation callback are removed. Existing email invitations are disabled at the action boundary; pending invitation records are preserved.
 - Global Supabase email-confirmation settings were not changed blindly. Provisioned Auth users use the supported admin create-user API with email_confirm: true.
 - Remaining known issue: leaked-password protection is disabled in Supabase Auth; enable it before production.
+
+
+## Verification snapshot — 2026-10-22
+- Additive restaurant-auth migration applied to the selected Supabase project. Mapping and attempt-window tables have RLS enabled with no public policies (default-deny); direct grants and admin/rate-limit RPCs were checked as service_role-only.
+- A rollback-only database test passed for five allowed auth attempts and sixth-attempt lockout.
+- Latest GitHub CI passed at commit cc7a4faea20a27a16cc526ee4b95357f46f58935. Vercel Preview deployment for the current branch was denied with HTTP 403, so the latest code is not confirmed deployed.
+- Do not use the new admin provisioning page until the server-only Supabase secret and CAFEOS_PLATFORM_ADMIN_TOKEN are set in Preview and the .invalid alias is validated with a controlled Auth Admin API test.
