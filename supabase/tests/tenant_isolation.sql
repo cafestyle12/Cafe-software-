@@ -16,7 +16,8 @@ values
 insert into public.branches (id,tenant_id,name)
 values
  ('a1000000-0000-4000-8000-000000000111','a1000000-0000-4000-8000-000000000101','Branch A'),
- ('b2000000-0000-4000-8000-000000000222','b2000000-0000-4000-8000-000000000202','Branch B');
+ ('b2000000-0000-4000-8000-000000000222','b2000000-0000-4000-8000-000000000202','Branch B'),
+ ('a1000000-0000-4000-8000-000000000112','a1000000-0000-4000-8000-000000000101','Branch A2');
 
 insert into public.memberships (tenant_id,user_id,status)
 values ('a1000000-0000-4000-8000-000000000101','c3000000-0000-4000-8000-000000000003','active');
@@ -27,6 +28,9 @@ from public.memberships m
 join public.roles r on r.tenant_id=m.tenant_id and r.role_key='manager'
 where m.tenant_id='a1000000-0000-4000-8000-000000000101'
   and m.user_id='c3000000-0000-4000-8000-000000000003';
+
+insert into public.branch_memberships (tenant_id,branch_id,user_id,status)
+values ('a1000000-0000-4000-8000-000000000101','a1000000-0000-4000-8000-000000000111','c3000000-0000-4000-8000-000000000003','active');
 
 set local role authenticated;
 set local request.jwt.claim.sub = 'a1000000-0000-4000-8000-000000000001';
@@ -56,6 +60,8 @@ declare affected integer; owner_membership uuid; owner_role uuid;
 begin
  if (select count(*) from public.tenants) <> 1 then raise exception 'FAIL: manager A did not see exactly one tenant'; end if;
  if exists (select 1 from public.branches where tenant_id='b2000000-0000-4000-8000-000000000202') then raise exception 'FAIL: manager A can read tenant B branches'; end if;
+ if exists (select 1 from public.branches where id='a1000000-0000-4000-8000-000000000112') then raise exception 'FAIL: branch-scoped manager can read an unassigned branch'; end if;
+ if not exists (select 1 from public.branches where id='a1000000-0000-4000-8000-000000000111') then raise exception 'FAIL: branch-scoped manager cannot read assigned branch'; end if;
 
  begin
   insert into public.branches (tenant_id,name) values ('b2000000-0000-4000-8000-000000000202','Unauthorized branch');
@@ -89,4 +95,4 @@ end
 $$;
 reset role;
 rollback;
-select 'PASS: tenant isolation, cross-tenant write denial, owner protection, and role escalation checks' as result;
+select 'PASS: tenant isolation, branch scoping, cross-tenant write denial, owner protection, and role escalation checks' as result;
