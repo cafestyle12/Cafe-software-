@@ -106,3 +106,15 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [ ] Configure server-only Supabase secret key for Preview and test invitation/member admin actions; no secret values should be committed.
 - [ ] Final Phase 02 acceptance remains blocked until all mandatory gates above pass.
 - Phase 03: NOT STARTED.
+
+
+## Final audit gate update — 2026-10-22
+- [x] Latest resend endpoint correction passed GitHub Actions run #117 (install, lint, typecheck, Vitest, production build): https://github.com/cafestyle12/Cafe-software-/actions/runs/39735158907.
+- [ ] Vercel deployment is currently blocked: commit status reports failure with a `build-rate-limit` URL. Previous READY-preview notes do not prove the latest commit is live.
+- [ ] End-to-end delivery and confirmation/recovery callbacks remain unverified with a controlled inbox.
+- [ ] Supabase Security Advisor warns that leaked-password protection is disabled; enable it before production.
+- [ ] SMTP provider, sender-domain/DNS, email template and quota settings could not be inspected through the connected API.
+- Phase 00: audit documentation exists; external mail-provider configuration evidence remains unavailable.
+- Phase 01: scripts, pinned dependencies, lockfile and CI exist; current CI passes. Vercel deployment availability remains blocked by platform build-rate limit.
+- Phase 02: NOT ACCEPTED. RLS negative tests passed previously and latest CI passed, but email E2E, latest deployed preview, real authenticated session/tenant tests, invite secret configuration and leaked-password protection remain open.
+- Phase 03: NOT STARTED.
