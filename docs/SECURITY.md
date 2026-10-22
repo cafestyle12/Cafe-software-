@@ -47,3 +47,7 @@ Last audited: 2026-10-22
 - A rollback-only database test passed for five allowed auth attempts and sixth-attempt lockout.
 - Latest GitHub CI passed at commit cc7a4faea20a27a16cc526ee4b95357f46f58935. Vercel Preview deployment for the current branch was denied with HTTP 403, so the latest code is not confirmed deployed.
 - Do not use the new admin provisioning page until the server-only Supabase secret and CAFEOS_PLATFORM_ADMIN_TOKEN are set in Preview and the .invalid alias is validated with a controlled Auth Admin API test.
+
+
+## Additional provisioning boundary check — 2026-10-22
+- A direct-RPC audit found the legacy create_tenant_with_branch function still had EXECUTE for authenticated even after the onboarding UI was disabled. Migration 20261022092809 revokes client execution and grants only service_role. Post-migration routine privilege inspection confirmed no anon/authenticated grants remain for that RPC or the new admin/rate-limit RPCs.
