@@ -28,9 +28,11 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [ ] Phase 02 GitHub Actions CI passes (lint, typecheck, unit tests, production build).
 - [ ] End-to-end sign-up/sign-in/confirmation/recovery verified against configured Supabase email templates.
 - [ ] Two-user cross-tenant negative tests and branch-scope tests executed with authenticated sessions.
-- [ ] Invitation delivery/acceptance and member disable/revoke flows implemented and tested.
+- [x] Invitation delivery/acceptance actions, invitation cancellation, and member disable/revoke actions implemented with server-side checks and audit events.
+- [ ] End-to-end invitation delivery/acceptance and member disable/revoke tests pass with a configured server-only Supabase secret key and test inbox.
 - [ ] Session revocation and role-boundary tests pass.
-- [ ] Phase 02 security/performance review signed off.
+- [x] Supabase security advisor returned no findings; performance advisor reports only unused-index informational notices on the empty workload.
+- [ ] Final Phase 02 security/performance review signed off after CI and authenticated negative tests.
 
 ## 03 — Café setup, branches, tables, floor plans, QR
 - [ ] Tenant settings, branch configuration, tables, floor plan data, QR token issuance/revocation.
