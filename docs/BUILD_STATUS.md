@@ -45,3 +45,21 @@ Last updated: 2026-10-22
 - Production deployment is not yet authorized/ready; preview only.
 - Do not treat this engineering preview as a production launch. Ordering, payments, live café operations, and integrations remain disabled.
 - Dependency vulnerability review remains a separate security task; do not force breaking framework upgrades to silence advisories.
+
+
+## Audit refresh — 2026-10-22
+
+### Confirmed root causes / blockers
+- Supabase Auth logs show `POST /auth/v1/resend` failing with HTTP 400 `validation_failed`: `Missing one of these types: signup, email_change, sms, phone_change`. The Auth REST API expects the resend `type=signup` in the query string. The branch implementation was corrected to send `type=signup` and `redirect_to=<configured-site>/auth/confirm` as query parameters, with the email in the request body.
+- Supabase Auth logs also show HTTP 429 `over_email_send_rate_limit` for signup and recovery requests. This is a provider-side throttle; application code cannot safely or truthfully make Supabase delivery unlimited. Do not bypass the provider limit. Configure custom SMTP and appropriate quotas for production capacity.
+- Logs include a `mail.send` event for a confirmation message, but log acceptance does not prove inbox delivery or successful callback completion. Delivery remains unverified end-to-end.
+- Previous recovery testing showed an expired/invalid verification link; confirmation/recovery template and callback still need an end-to-end test with a fresh test account/inbox.
+- Supabase and Vercel configuration can be partially inspected via connected tools, but the actual SMTP provider credentials, sender-domain verification, DNS status, and email-template settings were not readable through the available connected API. Do not infer they are configured.
+- Vercel API deployment listing was denied by the connected integration (403). Existing project notes identify the preview alias, but this audit did not independently verify a fresh deployment of the latest commit. Production deployment remains unauthorized and untouched.
+
+### Current CI evidence
+- A previous CI run passed install, ESLint, TypeScript, Vitest and production build.
+- After the current resend API correction, a new run for the latest commit was not returned by the connected PR-only workflow lookup at audit time. Do not mark the latest commit CI-verified until a run is visible and green.
+
+### Current phase gate
+Phase 00 documentation/environment inventory is substantially present; SMTP/provider inventory remains blocked by dashboard/provider visibility. Phase 01 scripts, lockfile, example env and CI exist; latest code still requires CI evidence. Phase 02 database/RLS work has prior positive evidence, but auth/email E2E, invitation server secret setup, real session tests and latest deployment verification remain open. Phase 02 is NOT accepted. Phase 03 has not been started.
