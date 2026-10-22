@@ -71,3 +71,11 @@ Unit tests added for Restaurant ID format/normalization, generated temporary-pas
 The last workflow run inspected was run #353 at commit `881aeba92f77b9c09a6032ee9274c35fac6c46b9`. Install and lint passed; TypeScript failed on a duplicate `randomUUID` import, nullable Auth response access, and an unused variable, so tests and production build were skipped. These issues were fixed in later branch commits, but a fresh green CI result for the current head has not been verified. Do not infer success from earlier green runs.
 
 The latest READY Vercel preview inspected is behind the current branch head, and Vercel reports a build-rate-limit failure for the current commit. Live owner provisioning, login, first-login password change, session revocation, and Auth Admin API acceptance of the internal `.invalid` alias remain unverified.
+
+
+## Live database verification actually performed — 2026-10-22
+- Applied and verified migrations through 20261022094402 in the connected Supabase project.
+- Verified restaurant_auth_accounts and auth_attempt_windows have RLS enabled, no public table grants, and service_role-only RPC access.
+- Verified create_tenant_with_branch and tenants INSERT are not granted to anon/authenticated; verified no browser-role TRUNCATE, REFERENCES or TRIGGER grants remain on public tables.
+- Ran transaction-only SQL tests and rolled them back: five login attempts allowed and sixth blocked; first-login owner denied; active mapped owner allowed; stale session_version denied; suspended account/tenant denied; legacy email-only session denied; profile sharing gated by the same owner membership helper.
+- CI run #431 passed install, lint, typecheck, unit tests and production build on commit b189c1394cc2ec17189a3315c711a67ac6fca1c8. Live Auth Admin API provisioning, actual login, password update and browser session flows have NOT been tested because Preview server secrets are missing and the Vercel deployment API denies a new Preview deployment.
