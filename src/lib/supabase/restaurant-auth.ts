@@ -49,10 +49,8 @@ export function rateLimitKey(scope: string, value: string) {
 }
 
 export async function consumeRestaurantLoginLimit(restaurantId: string, ip: string) {
-  const keys = [
-    rateLimitKey("restaurant", normalizeRestaurantId(restaurantId)),
-    rateLimitKey("ip", ip),
-  ];
+  const keys = [rateLimitKey("restaurant", normalizeRestaurantId(restaurantId))];
+  if (ip && ip !== "unknown") keys.push(rateLimitKey("ip", ip));
   const result = await adminFetch<Array<{ allowed: boolean; remaining: number; retry_after_seconds: number }>>(
     "/rest/v1/rpc/consume_cafeos_auth_attempts",
     { method: "POST", body: JSON.stringify({ p_key_hashes: keys }) },
