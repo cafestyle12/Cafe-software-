@@ -37,7 +37,6 @@ export default async function MembersPage({ searchParams }: Props) {
   ) : { data: [], error: null, status: 200 };
   const permissionKeys = new Set((permissions.data ?? []).map((row) => row.permission_key));
   const canManageMembers = permissionKeys.has("members.manage");
-  const canManageRoles = permissionKeys.has("roles.manage");
 
   const membershipResult = await supabaseRequest<Membership[]>(
     `/rest/v1/memberships?select=id,user_id,status,created_at&tenant_id=eq.${tenantId}&order=created_at.asc`,
@@ -53,12 +52,6 @@ export default async function MembersPage({ searchParams }: Props) {
     `/rest/v1/roles?select=id,name,role_key&tenant_id=eq.${tenantId}&order=name.asc`,
   );
   const allRoles = roleResult.data ?? [];
-  const rolePermissions = await supabaseRequest<Array<{ role_id: string; permission_key: string }>>(
-    `/rest/v1/role_permissions?select=role_id,permission_key&tenant_id=eq.${tenantId}`,
-  );
-  const privilegedRoleIds = new Set((rolePermissions.data ?? []).filter((row) => row.permission_key === "roles.manage").map((row) => row.role_id));
-  const availableRoles = canManageRoles ? allRoles : allRoles.filter((role) => !privilegedRoleIds.has(role.id) && role.role_key !== "owner");
-
   const memberRoleLinks = members.length ? await supabaseRequest<Array<{ membership_id: string; role_id: string }>>(
     `/rest/v1/membership_roles?select=membership_id,role_id&tenant_id=eq.${tenantId}`,
   ) : { data: [], error: null, status: 200 };
