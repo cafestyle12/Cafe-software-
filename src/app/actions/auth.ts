@@ -78,6 +78,45 @@ export async function updatePasswordAction(formData: FormData) {
   redirect("/app?passwordUpdated=1");
 }
 
+export async function completeAuthSessionAction(accessToken: string, refreshToken: string, type: string) {
+  const allowedTypes = new Set(["signup", "email", "recovery", "invite", "magiclink"]);
+  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!cfgUrl || !cfgKey || !allowedTypes.has(type) || accessToken.length < 20 || refreshToken.length < 20) {
+    redirect("/login?error=This%20confirmation%20link%20is%20invalid%20or%20expired");
+  }
+  const verified = await fetch(`${cfgUrl}/auth/v1/user`, {
+    headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!verified.ok) redirect("/login?error=This%20confirmation%20link%20is%20invalid%20or%20expired");
+  const user = await verified.json() as { id: string; email?: string; user_metadata?: { full_name?: string; name?: string } };
+  await setAuthSession({ access_token: accessToken, refresh_token: refreshToken, expires_in: 3600, user });
+  redirect(type === "recovery" ? "/reset-password" : "/onboarding");
+}
+
+export async function verifyConfirmationAction(tokenHash: string, type: string) {
+  const allowedTypes = new Set(["signup", "email", "recovery", "invite", "magiclink"]);
+  const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!cfgUrl || !cfgKey || !allowedTypes.has(type) || tokenHash.length < 10 || tokenHash.length > 512) {
+    redirect("/login?error=This%20confirmation%20link%20is%20invalid%20or%20expired");
+  }
+  const response = await fetch(`${cfgUrl}/auth/v1/verify`, {
+    method: "POST",
+    headers: { apikey: cfgKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ token_hash: tokenHash, type }),
+    cache: "no-store",
+  });
+  if (!response.ok) redirect("/login?error=This%20confirmation%20link%20is%20invalid%20or%20expired");
+  const session = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number; user?: { id: string; email?: string } };
+  if (session.access_token && session.refresh_token) {
+    await setAuthSession({ access_token: session.access_token, refresh_token: session.refresh_token, expires_in: session.expires_in, user: session.user });
+    redirect(type === "recovery" ? "/reset-password" : "/onboarding");
+  }
+  redirect("/login?notice=Email%20confirmed.%20You%20can%20now%20sign%20in");
+}
+
 export async function signOutAction() {
   const { currentAccessToken } = await import("@/lib/supabase/auth");
   const accessToken = await currentAccessToken();
