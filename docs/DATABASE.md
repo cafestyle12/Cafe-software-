@@ -33,3 +33,10 @@ After code review and green CI, apply the migration to the intended Supabase pro
 6. First-login and suspended-account RLS checks deny access to tenant data.
 
 Do not manually edit auth.users or store passwords in public tables.
+
+
+## Applied migration verification — 2026-10-22
+- Migration history contains version 20261022091308 named phase_02_restaurant_id_auth.
+- Both new tables report RLS enabled; no anon/authenticated table grants were returned. Admin and rate-limit RPCs have EXECUTE for service_role only (plus postgres owner privileges).
+- A transaction-only rate-limit test passed for five allowed attempts and a blocked sixth attempt; the transaction was rolled back so no test bucket remains.
+- Supabase advisor notes no-policy informational findings for these intentional default-deny tables. This is expected; do not add public policies to make the warning disappear.
