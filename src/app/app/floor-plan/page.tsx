@@ -64,7 +64,6 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
     {tables.length===0&&<p className="mt-5 rounded-xl bg-[var(--cream)] p-4 text-sm text-[var(--muted)]">No tables yet. Add a table to start setting up the floor.</p>}</section>
    </div>:<p className="rounded-xl border border-[var(--border)] p-5 text-sm">Select an active branch to manage its tables.</p>}
   </>}
-  <section className="mt-6 rounded-2xl border border-dashed border-[var(--border)] p-5"><h2 className="font-semibold">Floor plan preview</h2><p className="mt-1 text-sm text-[var(--muted)]">Tables currently store normalized logical coordinates. Interactive drag, resize, rotation, optimistic layout editing and print-ready QR artwork are still pending in this Phase 03 branch.</p><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{tables.slice(0,8).map(t=><div key={t.id} className="grid min-h-24 place-items-center rounded-2xl border border-[var(--border)] bg-white p-3 text-center" style={{transform:"rotate("+t.rotation+"deg)"}}><span className="text-sm font-semibold">{t.label}</span><span className="text-xs text-[var(--muted)]">{t.capacity} seats</span></div>)}</div></section>
   {tenantId&&branchId&&layout&&<FloorPlanEditor tenantId={tenantId} branchId={branchId} version={layout.version} tables={tables}/>}
   <footer className="mt-10 border-t border-[var(--border)] py-5 text-xs text-[var(--muted)]">CafeOS Phase 03 · QR codes are access credentials, not staff access or ordering authorization.</footer>
  </main>;
