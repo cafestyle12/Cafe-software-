@@ -40,3 +40,8 @@ Do not manually edit auth.users or store passwords in public tables.
 - Both new tables report RLS enabled; no anon/authenticated table grants were returned. Admin and rate-limit RPCs have EXECUTE for service_role only (plus postgres owner privileges).
 - A transaction-only rate-limit test passed for five allowed attempts and a blocked sixth attempt; the transaction was rolled back so no test bucket remains.
 - Supabase advisor notes no-policy informational findings for these intentional default-deny tables. This is expected; do not add public policies to make the warning disappear.
+
+
+## Self-service tenant creation lockout
+- Applied migration version 20261022092809 (phase_02_disable_self_service_tenant_creation) revokes EXECUTE on public.create_tenant_with_branch(text,text,text) from public, anon and authenticated, granting it only to service_role. This closes the direct-RPC bypass left behind when the UI onboarding route was disabled.
+- Post-migration grant verification shows all four admin/rate-limit RPCs and the legacy tenant-creation RPC are executable only by service_role (plus postgres owner privileges, omitted from the role filter).
