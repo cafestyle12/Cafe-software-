@@ -46,3 +46,15 @@ Required for Preview before owner login or provisioning can work:
 Set these only in Vercel Preview for branch phase-02/auth-multitenancy first. The connected Vercel environment-variable API did not permit inspection during this run, so presence is unverified. After configuration, redeploy the preview, apply the additive migration, then use a controlled test restaurant. Do not set Production variables or deploy production without explicit authorization.
 
 The new protected platform admin console is at /platform-admin; owner login is /login; forced first-login password change is /change-password; later password changes are at /account-settings.
+
+
+## Restaurant ID authentication rebuild deployment gate — 2026-10-22
+
+The current code expects these variables in Vercel **Preview only** for the Phase 02 branch:
+- `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` (server-only).
+- `CAFEOS_PLATFORM_ADMIN_TOKEN` (random, at least 32 characters).
+- Optional `CAFEOS_RATE_LIMIT_SECRET` (server-only).
+
+Do not send secret values through chat or commit them. The connected environment tooling has not verified these values. The code change is not accepted until the latest CI is green and the deployed Preview SHA matches the branch.
+
+Restaurant ID login is a server-side mapping to a random `.invalid` Supabase Auth email identity, because Supabase password auth requires email or phone. Provisioned identities are marked confirmed using the supported Admin API; this does not mean global email confirmation is disabled. No production deployment or merge is authorized. Phase 03 has not started.
