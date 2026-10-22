@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
 import { signOutAction } from "@/app/actions/auth";
-import { createCafeTableAction, createSeatingZoneAction, revokeTableQrAction } from "@/app/actions/floor-plan";\nimport { QrIssueForm } from "@/app/app/floor-plan/qr-issue-form";
+import { createCafeTableAction, createSeatingZoneAction, revokeTableQrAction } from "@/app/actions/floor-plan";
+import { QrIssueForm } from "@/app/app/floor-plan/qr-issue-form";
 
 type Membership={id:string;tenant_id:string};
 type Tenant={id:string;name:string;slug:string;status:string};
