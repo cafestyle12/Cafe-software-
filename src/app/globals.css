@@ -96,9 +96,9 @@ button, input, select, textarea { font: inherit; }
 .login-showcase { width: 100%; max-width: 560px; margin: 27px 0 17px; animation: showcase-rise .8s .18s both; }
 .showcase-slides { position: relative; overflow: hidden; width: 100%; aspect-ratio: 1.28; min-height: 270px; border-radius: 25px; background: #24382b; box-shadow: 0 22px 48px rgba(25,45,32,.16); isolation: isolate; }
 .showcase-slide { position: absolute; inset: 0; overflow: hidden; opacity: 0; visibility: hidden; transform: translateX(7%) scale(1.035); transition: opacity .8s ease, transform 1.1s cubic-bezier(.2,.75,.2,1), visibility .8s; }
-.showcase-slide.is-active { opacity: 1; visibility: visible; transform: translateX(0) scale(1); z-index: 1; }
+.showcase-slide[data-active="true"] { opacity: 1; visibility: visible; transform: translateX(0) scale(1); z-index: 1; }
 .showcase-image { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.08); transition: transform 6s ease; }
-.showcase-slide.is-active .showcase-image { transform: scale(1); }
+.showcase-slide[data-active="true"] .showcase-image { transform: scale(1); }
 .showcase-copy { position: absolute; left: clamp(22px,4vw,38px); right: 25px; bottom: clamp(25px,4vw,37px); color: white; z-index: 2; animation: copy-slide-in .8s .12s both; }
 .showcase-kicker { display: inline-flex; align-items: center; gap: 8px; color: #f1e5d3; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.8px; }
 .showcase-kicker i { width: 6px; height: 6px; border-radius: 50%; background: #b8d7a8; box-shadow: 0 0 0 4px rgba(184,215,168,.14); }
@@ -112,7 +112,7 @@ button, input, select, textarea { font: inherit; }
 .showcase-dots { display: flex; gap: 7px; align-items: center; }
 .showcase-dots button { width: 28px; height: 22px; padding: 0; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
 .showcase-dots button span { display: block; width: 7px; height: 7px; border-radius: 99px; background: #c7cec4; transition: width .35s ease, background .35s ease; }
-.showcase-dots button.active span { width: 27px; background: var(--accent); }
+.showcase-dots button[data-active="true"] span { width: 27px; background: var(--accent); }
 .showcase-autoplay { display: flex; align-items: center; gap: 7px; color: #8a9389; font-size: 8px; letter-spacing: 1.2px; font-weight: 800; }
 .autoplay-pulse { width: 6px; height: 6px; border-radius: 50%; background: #719b68; animation: blink-soft 1.8s infinite; }
 @keyframes showcase-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
