@@ -55,3 +55,20 @@ The global Supabase Auth email-confirmation setting has not been changed. The ne
 - SQL admin RPCs are executable only by service_role, not anon or authenticated.
 - The platform admin bootstrap token is a shared administrative secret; protect it like a password and rotate it after suspected exposure.
 - No production deployment or main-branch merge is authorized by this change.
+
+
+## Current approved architecture — Restaurant ID + password (2026-10-22)
+
+Supabase Auth's password grant is based on an email or phone identity; it does not provide native arbitrary username/password sign-in. CafeOS therefore resolves the submitted Restaurant ID on the server using the restricted `restaurant_auth_accounts` mapping, then authenticates against Supabase Auth using the mapped internal identity and submitted password. The browser never receives the mapped identity or a privileged key.
+
+- The internal identity is generated from 128 random bits and uses the reserved `.invalid` domain (`<random>@auth.cafeos.invalid`), which is explicitly non-deliverable. It is not a user-supplied email and is never shown in the UI. Restaurant ID uniqueness and alias uniqueness are enforced by database constraints.
+- Provisioning uses the supported Supabase Auth Admin API to create the user with `email_confirm: true`; this marks the internal identity confirmed without requiring a confirmation email. The project-wide email-confirmation setting is deliberately left unchanged because it may affect unrelated Auth users and is not required by this controlled provisioning flow.
+- No public signup, email recovery, resend-confirmation or email-confirmation callback is part of the restaurant-owner UI. The owner receives Restaurant ID and a high-entropy temporary password through a one-time administrator response.
+- Password change requires reauthentication using the current/temporary password, requires the new password to differ, updates Auth before clearing the mapping flag, and globally signs out the current user's sessions. The Auth metadata and mapping remain restrictive until the next successful login. RLS checks both the authoritative mapping and the signed `app_metadata.must_change_password` claim to fail closed during partial failures.
+- The platform admin route requires a server-only `CAFEOS_PLATFORM_ADMIN_TOKEN` and server-only Supabase secret. Never expose either to browser code or source control.
+
+## Migration and acceptance status
+
+The additive migration `20261022091308_phase_02_restaurant_id_auth` is applied to the selected Supabase project. The additional additive migration `20261022150000_phase_02_auth_jwt_first_login_guard` strengthens RLS against stale/partial first-login state. Existing Auth users and business data are preserved; unmapped legacy users are not automatically converted. The database inspected earlier had zero tenant rows, but existing profile/Auth users still require an explicit migration decision before production.
+
+Live provisioning/login is not accepted until the required server-only Vercel Preview variables are confirmed present and a controlled Auth Admin API test verifies the internal `.invalid` identity is accepted. Supabase Auth global settings and the latest Vercel deployment are not confirmed changed/deployed by this code change.
