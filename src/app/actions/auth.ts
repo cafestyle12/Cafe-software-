@@ -2,7 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
-import { authApi, clearAuthSession, setAuthSession, siteUrl } from "@/lib/supabase/auth";
+import { authApi, clearAuthAttempts, clearAuthSession, consumeAuthAttempt, setAuthSession, siteUrl } from "@/lib/supabase/auth";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -16,9 +16,15 @@ export async function signInAction(formData: FormData) {
   const email = value(formData, "email").toLowerCase();
   const password = String(formData.get("password") ?? "");
   if (!emailIsValid(email) || password.length < 1) redirect("/login?error=Enter%20a%20valid%20email%20and%20password");
+  const attempt = await consumeAuthAttempt("login");
+  if (!attempt.allowed) redirect("/login?error=You%20have%20used%205%20login%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
   const result = await authApi("/auth/v1/token?grant_type=password", { email, password });
-  if (!result.ok) redirect(`/login?error=${encodeURIComponent(result.error)}`);
+  if (!result.ok) {
+    const suffix = attempt.remaining > 0 ? " " + attempt.remaining + " attempt(s) remaining before a 15-minute cooldown." : " No attempts remain; wait 15 minutes before trying again.";
+    redirect("/login?error=" + encodeURIComponent(result.error + suffix));
+  }
   if (!result.payload?.access_token || !result.payload.refresh_token) redirect("/login?error=Sign-in%20could%20not%20start%20a%20session");
+  await clearAuthAttempts("login");
   await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
   redirect("/app");
 }
@@ -30,6 +36,8 @@ export async function signUpAction(formData: FormData) {
   if (name.length < 2 || name.length > 120 || !emailIsValid(email) || password.length < 10) {
     redirect("/signup?error=Enter%20your%20name%2C%20a%20valid%20email%2C%20and%20a%20password%20of%20at%20least%2010%20characters");
   }
+  const attempt = await consumeAuthAttempt("signup");
+  if (!attempt.allowed) redirect("/signup?error=You%20have%20used%205%20account%20creation%20attempts.%20Please%20wait%2015%20minutes%20before%20trying%20again");
   const baseUrl = siteUrl();
   if (!baseUrl) redirect("/signup?error=The%20site%20URL%20is%20not%20configured");
   const redirectTo = `${baseUrl}/auth/confirm`;
@@ -38,12 +46,16 @@ export async function signUpAction(formData: FormData) {
     password,
     data: { full_name: name },
   });
-  if (!result.ok) redirect(`/signup?error=${encodeURIComponent(result.error)}`);
+  if (!result.ok) {
+    const suffix = attempt.remaining > 0 ? " " + attempt.remaining + " attempt(s) remaining before a 15-minute cooldown." : " No attempts remain; wait 15 minutes before trying again.";
+    redirect(`/signup?error=${encodeURIComponent(result.error + suffix)}`);
+  }
+  await clearAuthAttempts("signup");
   if (result.payload?.access_token && result.payload.refresh_token) {
     await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
     redirect("/welcome");
   }
-  redirect("/login?notice=Check%20your%20email%20to%20confirm%20your%20CafeOS%20account%20before%20signing%20in");
+  redirect("/signup?notice=Account%20request%20received.%20If%20the%20confirmation%20email%20does%20not%20arrive%20within%20a%20few%20minutes%2C%20check%20spam%20and%20promotions%2C%20then%20use%20Resend%20confirmation.%20If%20it%20still%20does%20not%20arrive%2C%20the%20CafeOS%20email%20provider%20needs%20configuration");
 }
 
 export async function requestPasswordResetAction(formData: FormData) {
@@ -59,7 +71,11 @@ export async function requestPasswordResetAction(formData: FormData) {
     body: JSON.stringify({ email }),
     cache: "no-store",
   });
-  if (!response.ok) redirect("/forgot-password?error=Could%20not%20send%20the%20recovery%20email.%20Try%20again%20later");
+  if (!response.ok) {
+    const details = await response.json().catch(() => ({})) as { msg?: string; message?: string; error_code?: string };
+    if (response.status === 429 || details.error_code === "over_email_send_rate_limit") redirect("/forgot-password?error=Email%20provider%20rate%20limit%20reached.%20Wait%20a%20few%20minutes%20before%20retrying");
+    redirect("/forgot-password?error=Email%20could%20not%20be%20sent.%20Check%20Supabase%20SMTP%20settings%2C%20sender%20verification%2C%20and%20Auth%20logs");
+  }
   redirect("/forgot-password?sent=1");
 }
 
