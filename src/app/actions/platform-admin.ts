@@ -110,37 +110,37 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
   return { credentials: { restaurantId, temporaryPassword, restaurantName } };
 }
 
-export async function resetRestaurantPasswordAction(formData: FormData) {
-  if (!(await requirePlatformAdmin())) redirect("/platform-admin?error=Administrator%20session%20expired");
+export type ResetPasswordState = {
+  error?: string;
+  credentials?: { restaurantId: string; password: string };
+};
+
+export async function resetRestaurantPasswordAction(_previous: ResetPasswordState, formData: FormData): Promise<ResetPasswordState> {
+  if (!(await requirePlatformAdmin())) return { error: "Administrator session expired. Sign in again." };
   const restaurantId = String(formData.get("restaurant_id") ?? "").trim().toUpperCase();
-  const accounts = await adminFetch<Array<{ tenant_id: string; auth_user_id: string; status: string; auth_email: string }>>(
-    `/rest/v1/restaurant_auth_accounts?select=tenant_id,auth_user_id,status,auth_email&restaurant_id=eq.${encodeURIComponent(restaurantId)}&limit=1`,
+  const accounts = await adminFetch<Array<{ tenant_id: string; auth_user_id: string; status: string }>>(
+    `/rest/v1/restaurant_auth_accounts?select=tenant_id,auth_user_id,status&restaurant_id=eq.${encodeURIComponent(restaurantId)}&limit=1`,
   );
   const account = accounts.data?.[0];
-  if (!accounts.ok || !account || account.status === "deactivated") redirect("/platform-admin?error=Restaurant%20account%20was%20not%20found");
+  if (!accounts.ok || !account || account.status === "deactivated") return { error: "Restaurant account was not found or is deactivated." };
   const password = generateTemporaryPassword();
   const locked = await adminFetch<Array<{ tenant_id: string }>>(
     `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(account.auth_user_id)}`,
     { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: true, credential_reset_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
   );
-  if (!locked.ok || !locked.data?.length) redirect("/platform-admin?error=Could%20not%20lock%20the%20account%20for%20credential%20reset");
+  if (!locked.ok || !locked.data?.length) return { error: "Could not lock the account for credential reset." };
   const user = await adminFetch<{ app_metadata?: Record<string, unknown> }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
   const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
     method: "PUT",
     body: JSON.stringify({ password, app_metadata: { ...(user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status } }),
   });
-  if (!updated.ok) redirect("/platform-admin?error=Account%20is%20locked%20for%20safety%20but%20the%20password%20reset%20failed.%20Retry%20the%20reset");
+  if (!updated.ok) return { error: "Account is locked for safety but password reset failed. Retry the reset." };
   await adminFetch("/rest/v1/audit_events", {
     method: "POST", headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ tenant_id: account.tenant_id, actor_id: null, action: "platform.credentials_reset", entity_type: "restaurant_auth_account", entity_id: restaurantId }),
   });
-  const jar = await cookies();
-  jar.set("cafeos_one_time_reset", JSON.stringify({ restaurantId, password }), {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/platform-admin", maxAge: 60,
-  });
-  redirect("/platform-admin?reset=1");
+  return { credentials: { restaurantId, password } };
 }
-
 export async function changeRestaurantStatusAction(formData: FormData) {
   if (!(await requirePlatformAdmin())) redirect("/platform-admin?error=Administrator%20session%20expired");
   const restaurantId = String(formData.get("restaurant_id") ?? "").trim().toUpperCase();
