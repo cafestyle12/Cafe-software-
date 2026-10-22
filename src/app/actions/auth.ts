@@ -50,6 +50,12 @@ export async function signUpAction(formData: FormData) {
     const suffix = attempt.remaining > 0 ? " " + attempt.remaining + " attempt(s) remaining before a 15-minute cooldown." : " No attempts remain; wait 15 minutes before trying again.";
     redirect(`/signup?error=${encodeURIComponent(result.error + suffix)}`);
   }
+  // Supabase can return HTTP 200 for a repeated signup without sending a new email.
+  // An empty identities array is its documented signal that this email already exists.
+  const signupUser = result.payload?.user as (typeof result.payload.user & { identities?: unknown[] }) | undefined;
+  if (signupUser?.identities?.length === 0) {
+    redirect("/signup?notice=An%20account%20may%20already%20exist%20for%20this%20email.%20Use%20Resend%20confirmation%20below%20instead%20of%20creating%20it%20again.%20If%20no%20email%20arrives%2C%20the%20Supabase%20email%20provider%20needs%20configuration");
+  }
   await clearAuthAttempts("signup");
   if (result.payload?.access_token && result.payload.refresh_token) {
     await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
