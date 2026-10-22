@@ -51,3 +51,6 @@ Last audited: 2026-10-22
 
 ## Additional provisioning boundary check — 2026-10-22
 - A direct-RPC audit found the legacy create_tenant_with_branch function still had EXECUTE for authenticated even after the onboarding UI was disabled. Migration 20261022092809 revokes client execution and grants only service_role. Post-migration routine privilege inspection confirmed no anon/authenticated grants remain for that RPC or the new admin/rate-limit RPCs.
+
+
+- Migration 20261022093023 further tightens private.is_tenant_member: a session must carry the restaurant_owner app_metadata claim and match an active mapping row with the first-login flag cleared. A transaction-only SQL test confirmed first-login, suspended-account, and suspended-tenant denials while an active mapped owner passed.
