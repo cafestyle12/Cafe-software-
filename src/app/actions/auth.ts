@@ -19,7 +19,7 @@ export async function signInAction(formData: FormData) {
   const result = await authApi("/auth/v1/token?grant_type=password", { email, password });
   if (!result.ok) redirect(`/login?error=${encodeURIComponent(result.error)}`);
   if (!result.payload?.access_token || !result.payload.refresh_token) redirect("/login?error=Sign-in%20could%20not%20start%20a%20session");
-  await setAuthSession(result.payload);
+  await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
   redirect("/app");
 }
 
@@ -38,7 +38,7 @@ export async function signUpAction(formData: FormData) {
   });
   if (!result.ok) redirect(`/signup?error=${encodeURIComponent(result.error)}`);
   if (result.payload?.access_token && result.payload.refresh_token) {
-    await setAuthSession(result.payload);
+    await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
     redirect("/onboarding");
   }
   redirect("/login?notice=Check%20your%20email%20to%20confirm%20your%20CafeOS%20account%20before%20signing%20in");
