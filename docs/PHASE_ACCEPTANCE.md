@@ -118,3 +118,21 @@ Each phase must be independently verified before the next phase begins. Code pre
 - Phase 01: scripts, pinned dependencies, lockfile and CI exist; current CI passes. Vercel deployment availability remains blocked by platform build-rate limit.
 - Phase 02: NOT ACCEPTED. RLS negative tests passed previously and latest CI passed, but email E2E, latest deployed preview, real authenticated session/tenant tests, invite secret configuration and leaked-password protection remain open.
 - Phase 03: NOT STARTED.
+
+
+## 02 — Restaurant ID + password rebuild acceptance gate (in progress)
+- [x] Audited actual repository auth routes, direct REST auth implementation, tenant/membership/role schema, migration history, RLS helpers, Supabase Auth logs and current password-auth documentation before editing.
+- [x] Chose supported Supabase Auth identity mapping rather than inventing native username/password support: Restaurant ID resolves server-side to a generated internal alias on a non-deliverable reserved domain; Supabase Auth verifies passwords and issues sessions.
+- [x] Added server-only platform administrator console and one-time provisioning credential UI; code uses the supported Auth Admin API, no direct writes to auth.users, and attempts Auth-user rollback if DB provisioning fails.
+- [x] Added Restaurant ID login, hashed database rate limits (five attempts then 15-minute cooldown), first-login password-change flow, current-password reauthentication for later changes, administrator reset and account status actions.
+- [x] Added tenant RLS helper conditions for active tenant and mapped owner account status / first-login flag.
+- [x] Removed public signup, email recovery UI/action, resend-confirmation action and the email confirmation callback. Disabled email-based member invitations; retained old invite rows.
+- [x] Added additive migration and unit tests for generated IDs/passwords/internal aliases.
+- [ ] Apply and verify the new migration in Supabase; confirm function grants and RLS state.
+- [ ] Configure server-only Supabase secret and platform admin token in Vercel Preview; redeploy latest branch commit.
+- [ ] Confirm Supabase Admin API accepts the .invalid internal alias in the target project; provision a controlled test restaurant and test login.
+- [ ] Verify first-login RLS denial, password change, old temporary-password rejection, later reauthentication, reset, suspension, deactivation and reactivation using real sessions.
+- [ ] Run and pass latest CI lint, typecheck, unit tests and production build; inspect the actual run result.
+- [ ] Verify preview URL and commit, then run the authenticated browser smoke test. Do not merge or deploy production without explicit authorization.
+
+Phase 03 remains NOT STARTED.
