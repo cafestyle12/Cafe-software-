@@ -92,3 +92,17 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [ ] Backup restore, monitoring, health checks, rollback, and operator runbook verified.
 - [ ] End-to-end onboarding-to-reporting flow verified.
 - [ ] Launch-readiness report records passed, failed, blocked, and untested checks.
+
+
+## Audit recheck — 2026-10-22
+- [x] Inspected repository metadata, Phase 02 branch, PR #1, package scripts, environment example, auth actions, callback client, middleware, migration inventory, and current Supabase Auth logs.
+- [x] Root cause identified in resend API usage: `type=signup` was not sent as the required query parameter; corrected in `src/app/actions/email.ts`.
+- [x] Documented Supabase HTTP 429 email throttling as a provider limit that must not be bypassed.
+- [ ] Green CI for the latest resend correction commit.
+- [ ] Test actual resend request against Supabase after cooldown and verify a fresh confirmation email reaches a controlled test inbox.
+- [ ] Verify confirmation callback with a fresh link, recovery email/link, expired/malformed callback, login, logout, refresh, and protected-route behavior using real test sessions.
+- [ ] Verify SMTP provider, sender identity/domain/DNS, templates, quota and deliverability. The available connection could not read these settings; no delivery success is claimed.
+- [ ] Verify current preview deployment includes the latest commit. Connected Vercel deployment listing returned 403.
+- [ ] Configure server-only Supabase secret key for Preview and test invitation/member admin actions; no secret values should be committed.
+- [ ] Final Phase 02 acceptance remains blocked until all mandatory gates above pass.
+- Phase 03: NOT STARTED.
