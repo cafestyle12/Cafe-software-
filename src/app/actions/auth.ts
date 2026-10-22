@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { authApi, clearAuthAttempts, clearAuthSession, setAuthSession } from "@/lib/supabase/auth";
+import { authApi, clearAuthSession, setAuthSession } from "@/lib/supabase/auth";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -40,7 +40,6 @@ export async function signInAction(formData: FormData) {
     redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   }
   await clearRestaurantLoginLimit(limit.keys);
-  await clearAuthAttempts("login");
   await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
   const appMetadata = (result.payload.user as { app_metadata?: { must_change_password?: boolean; account_status?: string } }).app_metadata;
   if (account.must_change_password || appMetadata?.must_change_password === true) redirect("/change-password?first=1");
