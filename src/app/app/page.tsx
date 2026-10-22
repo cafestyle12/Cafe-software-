@@ -67,6 +67,8 @@ export default async function AppHomePage({ searchParams }: Props) {
                   {(branchesByTenant[tenant.id] ?? []).map((branch) => <div key={branch.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3"><div><p className="text-sm font-medium">{branch.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{branch.timezone} · {branch.currency}</p></div><span className="text-xs text-[var(--muted)]">Branch</span></div>)}
                   {(branchesByTenant[tenant.id] ?? []).length === 0 && <p className="text-sm text-[var(--muted)]">No active branches found.</p>}
                   <Link href={`/app/members?tenant=${tenant.id}`} className="inline-flex rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Manage team</Link>
+                  <Link href={`/app/branches?tenant=${tenant.id}`} className="ml-2 inline-flex rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Manage branches</Link>
+                  <Link href={`/app/floor-plan?tenant=${tenant.id}`} className="ml-2 inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white">Tables & floor plan</Link>
                 </div>
               </article>
             ))}
