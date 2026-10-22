@@ -5,7 +5,7 @@ export function normalizeRestaurantId(value: string) {
 }
 
 export function isValidRestaurantId(value: string) {
-  return /^[A-Z0-9][A-Z0-9_-]{2,31}$/.test(normalizeRestaurantId(value));
+  return /^[A-Z0-9][A-Z0-9_-]{2,31}$/.test(value.trim().toUpperCase());
 }
 
 export function generateRestaurantId() {
