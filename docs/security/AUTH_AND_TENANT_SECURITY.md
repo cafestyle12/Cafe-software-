@@ -16,11 +16,11 @@
 - Every public-schema business table has RLS enabled and forced. Policies explicitly allow authenticated members.
 - Private helper functions use a fixed empty search path and are not executable by anon or public. They centralize membership, permission, and branch-scope checks without recursive RLS lookups.
 - Owner permissions are seeded from the permission catalogue. Manager permissions are narrower. Role assignment writes require roles.manage, and active owner memberships cannot be disabled by the ordinary membership-management policy.
-- Branch-scoped members can only see explicitly assigned branches once they have at least one active branch assignment. Users without branch assignments and with an active tenant membership can access all active branches in that tenant.
+- Branch-scoped members can only see explicitly assigned active branches. Users with no branch-assignment records and an active tenant membership can access all active branches in that tenant; disabled or revoked assignment records do not widen access.
 - Audit events are append-only for authenticated users; no update/delete policy is provided.
 
 ## Current limitations / next checks
 - Email delivery depends on the Supabase Auth SMTP and email-template settings.
 - Invitation delivery/acceptance and member disable/revoke actions are implemented but need end-to-end tests with a real test inbox.
 - Custom role management and branch assignment UI, rate limits, abuse monitoring, session revocation, and production key rotation remain acceptance items.
-- Transactional RLS negative tests were executed against the connected project with two tenant owners and a manager identity; cross-tenant reads/writes and manager-to-owner escalation attempts were denied. Fixtures were rolled back.\n- Still test disabled/revoked memberships, explicit branch-scope assignments, expired confirmation links, recovery-link replay, invitation acceptance, and session refresh with actual browser sessions.
+- Transactional RLS negative tests were executed against the connected project with two tenant owners and a manager identity; cross-tenant reads/writes, unassigned-branch reads, and manager-to-owner escalation attempts were denied. Fixtures were rolled back.\n- Still test disabled/revoked memberships, explicit branch-scope assignments, expired confirmation links, recovery-link replay, invitation acceptance, and session refresh with actual browser sessions.
