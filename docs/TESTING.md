@@ -87,3 +87,10 @@ The latest READY Vercel preview inspected is behind the current branch head, and
 - `resolve_table_qr` smoke test with an invalid token returned a generic invalid row and no private tenant data.
 - Unit tests were added for user-selected Restaurant ID validation (examples include `YASHCAFE01` and `CAFE-FIROZABAD-01`; IDs are uppercased and limited to 3–32 letters/numbers/hyphens/underscores). CI has not yet been inspected for this branch.
 - Pending acceptance tests: cross-tenant direct REST attempts; table/zone CRUD persistence; duplicate constraints; floor-plan optimistic concurrency; QR active/revoked real token; QR file decoding; session idempotency/expiry/revocation; lint/typecheck/unit/build and deployed SHA smoke test.
+
+
+## Phase 03 test plan and current evidence — 2026-10-22
+
+Automated CI covers `npm ci`, ESLint, TypeScript, Vitest and production build. Unit tests exercise the local QR encoder's matrix generation and deterministic output; Restaurant ID tests cover custom-format validation including internal spaces. A prior CI run (#509) passed after floor-plan resizing/inactive-table fixes; the later database-hardening commit's run must also pass before acceptance.
+
+Database smoke checks confirm RLS/FORCE RLS, anonymous direct SELECT denied, private session-table direct SELECT denied, authenticated-only batch QR RPC, intended anonymous QR/session RPC grants, one-active-QR index, and generic invalid-token output. Still required: run a fresh Preview browser smoke test, scan/print a real issued QR, and test owner tenant isolation and session/revoke workflows using a controlled test account.
