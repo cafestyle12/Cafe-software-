@@ -32,9 +32,21 @@ export async function loginPlatformAdminAction(formData: FormData) {
   if (!expected || expected.length < 32) {
     redirect("/platform-admin?error=Platform%20admin%20is%20not%20configured.%20Set%20a%20random%2032%2B%20character%20CAFEOS_PLATFORM_ADMIN_TOKEN%20in%20Vercel%20Preview%20environment");
   }
+  const { headers } = await import("next/headers");
+  const { consumeRestaurantLoginLimit, clearRestaurantLoginLimit } = await import("@/lib/supabase/restaurant-auth");
+  const requestHeaders = await headers();
+  const ip = requestHeaders.get("x-real-ip") ?? requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await consumeRestaurantLoginLimit("PLATFORM_ADMIN", ip);
+  if (!limit.ok || !limit.decision) {
+    redirect("/platform-admin?error=Administrator%20sign-in%20is%20temporarily%20unavailable");
+  }
+  if (!limit.decision.allowed) {
+    redirect("/platform-admin?error=Too%20many%20attempts.%20Wait%2015%20minutes%20before%20trying%20again");
+  }
   if (!provided || !constantTimeEqual(provided, expected)) {
     redirect("/platform-admin?error=Invalid%20administrator%20credentials");
   }
+  await clearRestaurantLoginLimit(limit.keys);
   const jar = await cookies();
   jar.set(ADMIN_COOKIE, expected, {
     httpOnly: true,
