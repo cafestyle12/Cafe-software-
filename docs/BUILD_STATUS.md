@@ -72,3 +72,10 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Current Supabase Security Advisor warning: leaked-password protection is disabled. Enable it in Supabase Auth password-security settings.
 - The Vercel deployment listing API returned 403 and no deployment was changed or forced. Production was not deployed.
 - Overall Phase 02 acceptance remains **blocked** on email provider/template configuration and real controlled-inbox E2E, current deployment availability, authenticated session/tenant checks, and server-only secret setup for invitation administration.
+
+
+## Auth retry and persistent-session update — 2026-10-22
+- Added a browser-cookie UX guard allowing five login attempts and five signup attempts in a 15-minute window before a cooldown. This is an additional usability guard, not a substitute for server-side/IP rate limiting; Supabase Auth's own protections remain enabled.
+- Extended the CafeOS refresh-token cookie lifetime to one year and kept automatic access-token refresh in middleware. A user remains signed in across normal browser visits until sign-out or until Supabase expires/revokes the underlying session; the app cannot override Supabase's project-level session lifetime policy.
+- Improved signup and recovery messages to point toward SMTP, sender verification, Auth logs, and provider rate limits when email delivery fails.
+- Email delivery still requires a real test inbox. Source HTML templates in `supabase/templates/` must be copied into Supabase Dashboard → Authentication → Email Templates; committing the templates alone does not change Supabase's live mail configuration.
