@@ -17,6 +17,7 @@ type AuthSession = {
   expires_in?: number;
   user?: AuthUser;
 };
+type AuthApiPayload = Partial<AuthSession> & { message?: string; msg?: string; error_description?: string };
 
 function config() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -119,9 +120,9 @@ export async function authApi(path: string, body: unknown) {
     cache: "no-store",
   });
   const text = await response.text();
-  let payload: (AuthSession & { message?: string; msg?: string; error_description?: string }) | null = null;
+  let payload: AuthApiPayload | null = null;
   if (text) {
-    try { payload = JSON.parse(text) as typeof payload; } catch { payload = null; }
+    try { payload = JSON.parse(text) as AuthApiPayload; } catch { payload = null; }
   }
   if (!response.ok) {
     const raw = payload?.message ?? payload?.msg ?? payload?.error_description;
