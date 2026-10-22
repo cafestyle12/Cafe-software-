@@ -25,16 +25,18 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [x] Atomic tenant + first branch onboarding and default owner/manager/staff role seeding implemented.
 - [x] System roles protected from ordinary role CRUD; owner membership protections and role-assignment boundaries added.
 - [x] Tenant slug normalization unit tests added.
-- [x] GitHub Actions CI run #47 passed: dependency install, lint, typecheck, unit tests, and production build.
+- [x] GitHub Actions CI run #72 passed: dependency install, lint, typecheck, unit tests, and production build.
 - [x] TinyFish public browser smoke test passed for landing/auth pages and unauthenticated protected-route redirects on the Phase 02 preview.
 - [x] Branch-scoped Vercel Preview environment variables set; preview redeployment is READY.
-- [ ] Supabase Auth Site URL and allowed redirect URL configured for the branch alias; end-to-end sign-up/sign-in/confirmation/recovery verified against configured Supabase email templates.
+- [x] Supabase Auth Site URL and allowed redirect URL configured for the branch alias and verified in the dashboard.
+- [ ] Real email confirmation/recovery flow accepted end-to-end. Recovery currently shows `Could not send the recovery email. Try again later`; prior `/verify` attempts logged HTTP 403 `Email link is invalid or has expired`.
 - [x] Transactional SQL negative tests passed for tenant A/B read isolation, branch-scoped member visibility, cross-tenant branch insert denial, owner-membership protection, manager role-assignment boundaries, and manager owner-invite escalation denial.\n- [ ] Full browser/session integration and branch-scoped membership tests executed with real authenticated sessions.
+- [x] Animated, responsive CafeOS login redesign committed to the Phase 02 branch and confirmed live on preview; orbiting large-circle illustration, bounce/float/rotate/pulse/entrance transitions, hover states, and reduced-motion support included.
 - [x] Invitation delivery/acceptance actions, invitation cancellation, and member disable/revoke actions implemented with server-side checks and audit events.
 - [ ] Configure `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` as a server-only Vercel Preview environment variable; then test invitation delivery/acceptance and member disable/revoke with a test inbox.
 - [x] Database role-boundary tests passed for owner protection and manager privilege escalation attempts.\n- [ ] Session revocation and browser-level role-boundary tests pass.
 - [x] Supabase security advisor returned no findings; performance advisor reports only unused-index informational notices on the empty workload.
-- [ ] Final Phase 02 security/performance review signed off after CI and authenticated negative tests.
+- [ ] Final Phase 02 security/performance review signed off after CI and authenticated negative tests; Phase 02 remains open until recovery email, authenticated onboarding, invitation/member actions, and session revocation pass.
 
 ## 03 — Café setup, branches, tables, floor plans, QR
 - [ ] Tenant settings, branch configuration, tables, floor plan data, QR token issuance/revocation.
