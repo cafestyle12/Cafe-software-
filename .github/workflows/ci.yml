@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 20
       - name: Resolve dependencies and create lockfile
-        run: npm install
+        run: timeout 10m npm install --no-audit --no-fund
       - name: Commit generated lockfile
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
