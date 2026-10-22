@@ -4,9 +4,6 @@ import { cookies } from "next/headers";
 
 const ACCESS_COOKIE = "cafeos_access_token";
 const REFRESH_COOKIE = "cafeos_refresh_token";
-const AUTH_ATTEMPT_WINDOW_SECONDS = 15 * 60;
-const AUTH_ATTEMPT_LIMIT = 5;
-type AuthAttemptKind = "login" | "signup";
 
 type AuthUser = {
   id: string;
@@ -43,35 +40,6 @@ function authHeaders(key: string, accessToken?: string): HeadersInit {
 
 export async function currentAccessToken() {
   return (await cookies()).get(ACCESS_COOKIE)?.value ?? null;
-}
-
-export async function consumeAuthAttempt(kind: AuthAttemptKind) {
-  const jar = await cookies();
-  const name = "cafeos_" + kind + "_attempts";
-  const current = Number(jar.get(name)?.value ?? "0");
-  if (Number.isFinite(current) && current >= AUTH_ATTEMPT_LIMIT) {
-    return { allowed: false, remaining: 0 };
-  }
-  const next = Number.isFinite(current) ? Math.max(0, current) + 1 : 1;
-  jar.set(name, String(next), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: AUTH_ATTEMPT_WINDOW_SECONDS,
-  });
-  return { allowed: true, remaining: AUTH_ATTEMPT_LIMIT - next };
-}
-
-export async function clearAuthAttempts(kind: AuthAttemptKind) {
-  const jar = await cookies();
-  jar.set("cafeos_" + kind + "_attempts", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
 }
 
 export async function setAuthSession(session: AuthSession) {
