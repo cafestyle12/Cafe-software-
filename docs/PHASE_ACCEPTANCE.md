@@ -25,12 +25,12 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [x] Atomic tenant + first branch onboarding and default owner/manager/staff role seeding implemented.
 - [x] System roles protected from ordinary role CRUD; owner membership protections and role-assignment boundaries added.
 - [x] Tenant slug normalization unit tests added.
-- [ ] Phase 02 GitHub Actions CI passes (lint, typecheck, unit tests, production build).
+- [x] GitHub Actions CI run #38 passed: dependency install, lint, typecheck, unit tests, and production build.
 - [ ] End-to-end sign-up/sign-in/confirmation/recovery verified against configured Supabase email templates.
-- [ ] Two-user cross-tenant negative tests and branch-scope tests executed with authenticated sessions.
+- [x] Transactional SQL negative tests passed for tenant A/B read isolation, cross-tenant branch insert denial, owner-membership protection, manager role-assignment boundaries, and manager owner-invite escalation denial.\n- [ ] Full browser/session integration and branch-scoped membership tests executed with real authenticated sessions.
 - [x] Invitation delivery/acceptance actions, invitation cancellation, and member disable/revoke actions implemented with server-side checks and audit events.
 - [ ] End-to-end invitation delivery/acceptance and member disable/revoke tests pass with a configured server-only Supabase secret key and test inbox.
-- [ ] Session revocation and role-boundary tests pass.
+- [x] Database role-boundary tests passed for owner protection and manager privilege escalation attempts.\n- [ ] Session revocation and browser-level role-boundary tests pass.
 - [x] Supabase security advisor returned no findings; performance advisor reports only unused-index informational notices on the empty workload.
 - [ ] Final Phase 02 security/performance review signed off after CI and authenticated negative tests.
 
