@@ -74,6 +74,8 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
   const restaurantName = String(formData.get("restaurant_name") ?? "").trim();
   const branchName = String(formData.get("branch_name") ?? "").trim();
   const ownerName = String(formData.get("owner_name") ?? "").trim();
+  const restaurantId = String(formData.get("restaurant_id") ?? "").trim().toUpperCase().replace(/\\s+/g, "");
+  const temporaryPassword = String(formData.get("initial_password") ?? "");
   if (restaurantName.length < 2 || restaurantName.length > 120 || branchName.length < 2 || branchName.length > 120 || ownerName.length < 2 || ownerName.length > 120) {
     return { error: "Enter a restaurant name, first branch name, and owner name (2–120 characters each)." };
   }
