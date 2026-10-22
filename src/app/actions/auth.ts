@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { authApi, clearAuthSession, setAuthSession } from "@/lib/supabase/auth";
 import { validateRestaurantPasswordChange } from "@/lib/restaurant-credentials";
@@ -58,92 +59,96 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
   const currentPassword = String(formData.get("current_password") ?? "");
+  const passwordError = validateRestaurantPasswordChange(currentPassword, password, confirm);
+  if (passwordError === "weak_password") redirect("/change-password?error=Use%20a%2012%E2%80%93128%20character%20password%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
+  if (passwordError === "password_mismatch") redirect("/change-password?error=New%20passwords%20do%20not%20match");
+  if (passwordError === "must_differ_from_current") redirect("/change-password?error=Enter%20your%20current%20password%20and%20choose%20a%20different%20new%20password");
+
   const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
   const { adminFetch } = await import("@/lib/supabase/restaurant-auth");
   const user = await getCurrentUser();
   const accessToken = await currentAccessToken();
   if (!user || !accessToken) redirect("/login?error=Please%20sign%20in%20again");
-  const appMetadata = (user as { app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string; session_version?: string; [key: string]: unknown } }).app_metadata;
-  if (appMetadata?.cafeos_account_type !== "restaurant_owner" || appMetadata.account_status !== "active") redirect("/login?error=Restaurant%20account%20is%20unavailable");
-
-  const accounts = await adminFetch<Array<{ auth_email: string; status: string; session_version: string; must_change_password: boolean }>>(
-    `/rest/v1/restaurant_auth_accounts?select=auth_email,status,session_version,must_change_password&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-  );
-  const account = accounts.data?.[0];
-  if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
-  const firstLogin = appMetadata.must_change_password === true || account.must_change_password;
-  const passwordValidation = validateRestaurantPasswordChange(currentPassword, password, confirm, !firstLogin);
-  if (passwordValidation) {
-    const error = "Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol%20and%20a%20different%20password";
-    redirect(firstLogin ? `/change-password?first=1&error=${error}` : `/account-settings?error=${error}`);
-  }
-
-  if (!firstLogin) {
-    if (currentPassword.length < 1) redirect("/account-settings?error=Enter%20your%20current%20password");
-    const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
-    if (!reauth.ok) redirect("/account-settings?error=Current%20password%20is%20incorrect");
-  }
-
-  const sessionVersion = randomUUID();
-  // Rotate the Auth-side session version with the password first. The RLS helper
-  // compares this claim to the mapping row, so a partial update fails closed.
-  const updated = await adminFetch<{ id: string }>(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      password,
-      app_metadata: {
-        ...(appMetadata ?? {}),
-        cafeos_account_type: "restaurant_owner",
-        account_status: "active",
-        must_change_password: firstLogin,
-        session_version: sessionVersion,
-      },
-    }),
-  });
-  if (!updated.ok) redirect(firstLogin ? "/change-password?first=1&error=Password%20could%20not%20be%20updated" : "/account-settings?error=Password%20could%20not%20be%20updated");
-
-  const profileUpdate = await adminFetch<Array<{ tenant_id: string }>>(
-    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
-    {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
-        must_change_password: false,
-        password_changed_at: new Date().toISOString(),
-        session_version: sessionVersion,
-        updated_at: new Date().toISOString(),
-      }),
-    },
-  );
-  if (!profileUpdate.ok || !profileUpdate.data?.length) {
-    redirect(firstLogin
-      ? "/change-password?first=1&error=Password%20changed%20but%20account%20activation%20is%20pending.%20Retry%20the%20change"
-      : "/account-settings?error=Password%20changed%20but%20session%20rotation%20is%20pending.%20Retry%20the%20change");
-  }
-
-  if (firstLogin) {
-    const activated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        app_metadata: { ...(appMetadata ?? {}), cafeos_account_type: "restaurant_owner", account_status: "active", must_change_password: false, session_version: sessionVersion },
-      }),
-    });
-    if (!activated.ok) redirect("/change-password?first=1&error=Password%20changed.%20Final%20activation%20is%20pending.%20Retry%20the%20change");
-  }
 
   const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (cfgUrl && cfgKey) {
-    await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
-      method: "POST",
-      headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    }).catch(() => null);
-  }
-  await clearAuthSession();
-  redirect("/login?notice=Password%20updated.%20Please%20sign%20in%20again%20with%20your%20new%20password");
-}
+  if (!cfgUrl || !cfgKey) redirect("/change-password?error=Authentication%20is%20not%20configured");
 
+  const accounts = await adminFetch<Array<{ auth_email: string; status: string; must_change_password: boolean; session_version: string }>>(
+    `/rest/v1/restaurant_auth_accounts?select=auth_email,status,must_change_password,session_version&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+  );
+  const account = accounts.data?.[0];
+  if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
+
+  const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string; cafeos_account_type?: string; session_version?: string } }).app_metadata ?? {};
+  const firstLogin = account.must_change_password || appMetadata.must_change_password === true;
+  if (appMetadata.cafeos_account_type !== "restaurant_owner") redirect("/login?error=Account%20is%20unavailable");
+
+  const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
+  if (!reauth.ok || reauth.payload?.user?.id !== user.id || (reauth.payload.user as { app_metadata?: { session_version?: string } }).app_metadata?.session_version !== account.session_version) {
+    redirect("/change-password?error=Current%20password%20is%20incorrect%20or%20the%20account%20needs%20administrator%20repair");
+  }
+
+  if (account.must_change_password && appMetadata.must_change_password !== true) {
+    const lockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: true, account_status: "active" } }),
+    });
+    if (!lockedMetadata.ok) redirect("/change-password?error=Could%20not%20securely%20prepare%20the%20first-login%20password%20change.%20Please%20retry");
+    await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
+      method: "POST", headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` }, cache: "no-store",
+    }).catch(() => null);
+    await clearAuthSession();
+    redirect("/login?notice=Security%20state%20was%20updated.%20Sign%20in%20again%20to%20change%20your%20temporary%20password");
+  }
+
+  const sessionVersion = randomUUID();
+  // Lock and rotate the database session version first, invalidating existing
+  // JWTs before the password is changed. All partial failures remain deny-only.
+  const locked = await adminFetch<Array<{ tenant_id: string }>>(
+    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: true, session_version: sessionVersion, updated_at: new Date().toISOString() }) },
+  );
+  if (!locked.ok || !locked.data?.length) redirect("/change-password?error=Could%20not%20securely%20lock%20the%20account%20for%20password%20change");
+
+  const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ password, app_metadata: { ...appMetadata, must_change_password: true, account_status: "active", session_version: sessionVersion } }),
+  });
+  if (!updated.ok) {
+    await adminFetch(`/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "PATCH", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ must_change_password: true, session_version: account.session_version, updated_at: new Date().toISOString() }),
+    });
+    redirect("/change-password?error=Password%20update%20failed.%20The%20account%20remains%20locked%20until%20you%20retry");
+  }
+
+  const profileUpdate = await adminFetch<Array<{ tenant_id: string }>>(
+    `/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ must_change_password: false, session_version: sessionVersion, password_changed_at: new Date().toISOString(), updated_at: new Date().toISOString() }) },
+  );
+  if (!profileUpdate.ok || !profileUpdate.data?.length) {
+    redirect("/change-password?error=Password%20changed%20but%20the%20account%20remains%20locked.%20Retry%20or%20contact%20CafeOS%20support");
+  }
+
+  const unlockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: false, account_status: "active", session_version: sessionVersion } }),
+  });
+  if (!unlockedMetadata.ok) {
+    await adminFetch(`/rest/v1/restaurant_auth_accounts?auth_user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "PATCH", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ must_change_password: true, session_version: sessionVersion, updated_at: new Date().toISOString() }),
+    });
+    redirect("/change-password?error=Password%20changed%20but%20activation%20is%20pending.%20Retry%20or%20contact%20CafeOS%20support");
+  }
+
+  await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
+    method: "POST", headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` }, cache: "no-store",
+  }).catch(() => null);
+  await clearAuthSession();
+  redirect("/login?notice=Password%20updated.%20Please%20sign%20in%20with%20your%20new%20password");
+}
 
 export async function inviteMemberAction(formData: FormData) {
   void formData;
