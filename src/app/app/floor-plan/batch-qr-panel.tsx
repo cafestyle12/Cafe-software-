@@ -19,7 +19,7 @@ export function BatchQrPanel({ tenantId, branchId, tables }: { tenantId: string;
     const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-cafeos-qr-card]"));
     const selected = cards.map((card) => ({
       label: card.dataset.cafeosQrCard ?? "Table",
-      svg: card.querySelector("[data-cafeos-qr-svg]")?.innerHTML ?? "",
+      svg: card.querySelector("[data-cafeos-qr-svg]")?.outerHTML ?? "",
     })).filter((card) => card.svg);
     if (!selected.length) return;
     const popup = window.open("", "_blank", "width=900,height=760");
