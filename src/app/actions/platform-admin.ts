@@ -6,8 +6,6 @@ import { redirect } from "next/navigation";
 import {
   adminFetch,
   generateInternalAuthEmail,
-  generateRestaurantId,
-  generateTemporaryPassword,
 } from "@/lib/supabase/restaurant-auth";
 
 const ADMIN_COOKIE = "cafeos_platform_admin";
@@ -74,14 +72,18 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
   const restaurantName = String(formData.get("restaurant_name") ?? "").trim();
   const branchName = String(formData.get("branch_name") ?? "").trim();
   const ownerName = String(formData.get("owner_name") ?? "").trim();
-  const restaurantId = String(formData.get("restaurant_id") ?? "").trim().toUpperCase().replace(/\\s+/g, "");
+  const restaurantId = String(formData.get("restaurant_id") ?? "").trim().toUpperCase().replace(/\s+/g, "");
   const temporaryPassword = String(formData.get("initial_password") ?? "");
   if (restaurantName.length < 2 || restaurantName.length > 120 || branchName.length < 2 || branchName.length > 120 || ownerName.length < 2 || ownerName.length > 120) {
     return { error: "Enter a restaurant name, first branch name, and owner name (2–120 characters each)." };
   }
 
-  const restaurantId = generateRestaurantId();
-  const temporaryPassword = generateTemporaryPassword();
+  if (!/^CAFE-[A-Z0-9]{4}-[A-Z0-9]{8}$/.test(restaurantId)) {
+    return { error: "Enter a Restaurant ID in the format CAFE-AB12-34CD56EF." };
+  }
+  if (temporaryPassword.length < 12 || temporaryPassword.length > 128 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword) || !/[^A-Za-z0-9]/.test(temporaryPassword)) {
+    return { error: "Initial password must be 12–128 characters and include uppercase, lowercase, number and symbol." };
+  }
   const authEmail = generateInternalAuthEmail();
   const sessionVersion = randomUUID();
   const slugBase = restaurantName.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 55) || "restaurant";
