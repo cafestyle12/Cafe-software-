@@ -41,7 +41,7 @@ export async function resendConfirmationAction(formData: FormData) {
     if (response.status === 429 || payload.error_code === "over_email_send_rate_limit") {
       redirect("/signup?resendError=Email%20limit%20reached.%20Wait%20a%20few%20minutes%20before%20trying%20again");
     }
-    redirect("/signup?resendError=Could%20not%20resend%20the%20email.%20Check%20the%20address%20and%20try%20again");
+    redirect("/signup?resendError=Email%20could%20not%20be%20sent.%20Check%20Supabase%20SMTP%20settings%2C%20verified%20sender%2C%20and%20Auth%20logs");
   }
 
   redirect("/signup?resendSent=1");
