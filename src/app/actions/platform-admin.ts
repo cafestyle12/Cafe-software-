@@ -28,8 +28,8 @@ async function requirePlatformAdmin() {
 export async function loginPlatformAdminAction(formData: FormData) {
   const expected = process.env.CAFEOS_PLATFORM_ADMIN_TOKEN;
   const provided = String(formData.get("admin_token") ?? "");
-  if (!expected || expected.length < 32) {
-    redirect("/platform-admin?error=Platform%20admin%20is%20not%20configured.%20Set%20a%20random%2032%2B%20character%20CAFEOS_PLATFORM_ADMIN_TOKEN%20in%20Vercel%20Preview%20environment");
+  if (!expected || expected.length < 10) {
+    redirect("/platform-admin?error=Platform%20admin%20is%20not%20configured.%20Set%20a%20at%20least%2010%20characters%20for%20CAFEOS_PLATFORM_ADMIN_TOKEN%20in%20Vercel%20environment");
   }
   const { headers } = await import("next/headers");
   const { consumeRestaurantLoginLimit, clearRestaurantLoginLimit } = await import("@/lib/supabase/restaurant-auth");
