@@ -142,3 +142,12 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Current latest READY Vercel Preview is https://cafe-software-95s0eecl9-edityyp.vercel.app, deployed at commit 6a42f35a99e13c4dd953d98cd061a5dfe4056a2d, which is older than the current branch head. The Vercel deployment API returned 403 for a new Preview deployment. Do not claim current code is deployed.
 - The current Preview UI reports missing server-only Supabase secret/platform admin token. Configure SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY and CAFEOS_PLATFORM_ADMIN_TOKEN in Preview, then obtain permission to deploy a Preview before attempting live provisioning. Do not configure Production or merge without authorization.
 - Supabase leaked-password protection remains disabled and must be enabled before production. The internal .invalid alias and full Admin API flow remain unverified because the server secret is not configured/available to this run.
+
+
+## Phase 03 implementation started — 2026-10-22
+- Work is isolated on `phase-03/branches-tables-floor-qr`, based on `phase-02/auth-multitenancy`. No merge to `main` and no production deployment was performed.
+- Added the additive migration `20261023100000_phase_03_branches_tables_floor_qr.sql`; it was applied successfully to Supabase project `pryajliswtltcnbvcoiw`.
+- Verified via SQL that `seating_zones`, `cafe_tables`, `floor_plan_layouts`, `table_qr_credentials`, and `table_sessions` all have RLS enabled and forced. A direct invalid-token call to `resolve_table_qr` returned only a generic invalid result.
+- Added authenticated workspace pages for branch creation and basic table/zone management; QR credential issuance stores a SHA-256 hash and shows the raw token once without putting it into the admin URL. Public table route returns only restaurant/branch/table display data.
+- Changed platform-admin Restaurant ID input to accept custom IDs: 3–32 characters, letters/numbers/hyphens/underscores, starting with a letter or number; normalized to uppercase and uniqueness enforced by the existing mapping plus a new tenant profile index.
+- NOT COMPLETE: no automated CI result has yet been verified for the Phase 03 branch; interactive drag/resize/rotate floor-plan editing, layout version-conflict action, table/branch edit/deactivate flows, QR artwork/download/print/batch export, and idempotent customer table-session initialization remain to implement. Phase 03 acceptance gate remains open. Phase 04 has not started.
