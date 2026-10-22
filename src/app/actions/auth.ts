@@ -45,7 +45,7 @@ export async function signInAction(formData: FormData) {
     redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   }
   await clearRestaurantLoginLimit(limit.keys);
-  await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: payload.expires_in, user: payload.user });
+  await setAuthSession({ access_token: payload.access_token, refresh_token: payload.refresh_token, expires_in: payload.expires_in, user: payload.user });
   const appMetadata = (payload.user as { app_metadata?: { must_change_password?: boolean; account_status?: string } }).app_metadata;
   if (account.must_change_password || appMetadata?.must_change_password === true) redirect("/change-password?first=1");
   redirect("/app");
