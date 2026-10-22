@@ -39,3 +39,20 @@ Run with a controlled test account and inbox, after provider throttling cools do
 - Supabase security advisor previously reported no findings.
 - Supabase logs show resend request validation error (missing required `type` query parameter), plus 429 email rate limits. The query parameter was corrected in the branch.
 - Real confirmation/recovery delivery and fresh callback behavior are not yet accepted end-to-end.
+
+
+## Restaurant ID authentication rebuild test matrix — 2026-10-22
+1. Generate 100 Restaurant IDs; validate format and uniqueness in the sample; verify DB unique constraint rejects duplicate IDs.
+2. Provision with platform admin; confirm Auth user, tenant, first branch, owner membership/role, branch membership, mapping and audit event are created transactionally.
+3. Confirm invalid admin token, missing server secret and non-admin action are rejected.
+4. Login with valid Restaurant ID/password; verify session cookies are HttpOnly and tenant workspace loads only after first-login password change.
+5. Invalid Restaurant ID and wrong password return the same generic response.
+6. Five failed attempts are allowed; the sixth triggers a 15-minute lockout keyed by hashed Restaurant ID and IP. Success clears the counters.
+7. New owner is forced to change temporary password; old temporary password fails; dashboard and tenant REST data remain blocked until mapping flag is cleared.
+8. Later password change requires current-password reauthentication and global logout request.
+9. Admin reset marks the account must-change before password update; suspension/deactivation closes RLS access and prevents login; reactivation restores eligible access.
+10. Verify no public signup form, forgot-password form, resend-verification action or email confirmation callback remains.
+11. Verify tenant A/B RLS isolation, cross-tenant access denial and existing RLS negative tests still pass.
+12. Run install, lint, typecheck, unit tests and production build; inspect the exact latest run and deployment SHA.
+
+Unit tests added for Restaurant ID format/normalization, generated temporary-password complexity, and collision-resistant internal aliases. Live Auth tests require the server-only Supabase secret and a safe test tenant; do not claim them passed before execution.
