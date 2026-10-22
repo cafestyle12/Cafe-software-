@@ -23,4 +23,4 @@
 - Email delivery depends on the Supabase Auth SMTP and email-template settings.
 - Invitation delivery/acceptance and member disable/revoke actions are implemented but need end-to-end tests with a real test inbox.
 - Custom role management and branch assignment UI, rate limits, abuse monitoring, session revocation, and production key rotation remain acceptance items.
-- Test with at least two users in different tenants: tenant A must never read, mutate, or infer tenant B's rows. Also test disabled/revoked memberships, role escalation attempts, branch-scope enforcement, expired confirmation links, recovery-link replay, and session refresh.
+- Transactional RLS negative tests were executed against the connected project with two tenant owners and a manager identity; cross-tenant reads/writes and manager-to-owner escalation attempts were denied. Fixtures were rolled back.\n- Still test disabled/revoked memberships, explicit branch-scope assignments, expired confirmation links, recovery-link replay, invitation acceptance, and session refresh with actual browser sessions.
