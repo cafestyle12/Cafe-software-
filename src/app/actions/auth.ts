@@ -38,7 +38,7 @@ export async function signInAction(formData: FormData) {
   }
 
   const result = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password });
-  if (!result.ok) redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
+  if (!result.ok || !result.payload) redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   const authMetadata = (result.payload.user as { app_metadata?: { cafeos_account_type?: string; account_status?: string; must_change_password?: boolean; session_version?: string } } | undefined)?.app_metadata;
   if (!result.payload.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id || authMetadata?.cafeos_account_type !== "restaurant_owner" || authMetadata.account_status !== "active" || authMetadata.session_version !== account.session_version) {
     redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
