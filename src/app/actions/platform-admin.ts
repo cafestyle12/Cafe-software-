@@ -156,10 +156,12 @@ export async function changeRestaurantStatusAction(formData: FormData) {
     method: "POST", body: JSON.stringify({ p_tenant_id: account.tenant_id, p_status: status }),
   });
   if (!changed.ok) redirect("/platform-admin?error=Could%20not%20update%20restaurant%20status.%20Confirm%20the%20migration%20is%20applied");
-  const user = await adminFetch<{ app_metadata?: Record<string, unknown> }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
+  const user = await adminFetch<{ app_metadata?: Record<string, unknown>; user?: { app_metadata?: Record<string, unknown> } }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
+  if (!user.ok || !user.data) redirect("/platform-admin?error=Database%20status%20updated%20but%20Auth%20metadata%20could%20not%20be%20read.%20RLS%20still%20blocks%20inactive%20tenants");
   const metaStatus = status === "active" ? "active" : status;
+  const appMetadata = user.data.user?.app_metadata ?? user.data.app_metadata ?? {};
   const meta = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
-    method: "PUT", body: JSON.stringify({ app_metadata: { ...(user.data?.app_metadata ?? {}), account_status: metaStatus } }),
+    method: "PUT", body: JSON.stringify({ app_metadata: { ...appMetadata, account_status: metaStatus } }),
   });
   await adminFetch("/rest/v1/audit_events", {
     method: "POST", headers: { Prefer: "return=minimal" },
