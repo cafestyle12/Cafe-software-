@@ -73,7 +73,7 @@ export function generateRestaurantId() {
 }
 
 export function generateTemporaryPassword() {
-  return randomBytes(24).toString("base64url");
+  return randomBytes(24).toString("base64url") + "!aA9";
 }
 
 export function generateInternalAuthEmail() {
