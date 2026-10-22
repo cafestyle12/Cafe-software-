@@ -3,12 +3,16 @@ import { redirect } from "next/navigation";
 import { signInAction } from "@/app/actions/auth";
 import { authConfigured, getCurrentUser } from "@/lib/supabase/auth";
 import { LoginShowcase } from "./login-showcase";
+import { PasswordField } from "@/components/password-field";
 
 type Props = { searchParams: Promise<{ error?: string; notice?: string }> };
 
 export default async function LoginPage({ searchParams }: Props) {
   const user = await getCurrentUser();
-  if (user) redirect("/app");
+  if (user) {
+    const meta = (user as { app_metadata?: { must_change_password?: boolean } }).app_metadata;
+    redirect(meta?.must_change_password ? "/change-password?first=1" : "/app");
+  }
   const params = await searchParams;
   const configured = authConfigured();
 
@@ -29,18 +33,18 @@ export default async function LoginPage({ searchParams }: Props) {
           <div className="auth-card">
             <div className="card-topline"><span>WELCOME BACK</span><span className="sparkle">✦</span></div>
             <h2>Good to have<br />you back.</h2>
-            <p className="auth-subtitle">Sign in to pick up where your café left off.</p>
+            <p className="auth-subtitle">Use the Restaurant ID and temporary or current password provided by CafeOS.</p>
             {params.error && <p role="alert" className="auth-alert auth-error">{params.error}</p>}
             {params.notice && <p role="status" className="auth-alert auth-success">{params.notice}</p>}
             {!configured && <p role="alert" className="auth-alert auth-warning">Authentication is not configured yet. Add the Supabase URL and publishable key.</p>}
             <form action={signInAction} className="auth-form">
-              <label>Email address<span className="input-shell"><span aria-hidden="true">✉</span><input name="email" type="email" autoComplete="email" required maxLength={320} placeholder="you@yourcafe.com" /></span></label>
-              <label>Password<span className="input-shell"><span aria-hidden="true">⌑</span><input name="password" type="password" autoComplete="current-password" required placeholder="Enter your password" /></span></label>
-              <div className="auth-links"><Link href="/forgot-password">Forgot password?</Link></div>
+              <label>Restaurant ID<span className="input-shell"><span aria-hidden="true">▦</span><input name="restaurant_id" type="text" autoComplete="username" required maxLength={64} placeholder="CAFE-AB12-34CD56EF" style={{ textTransform: "uppercase" }} /></span></label>
+              <label>Password<PasswordField name="password" placeholder="Enter your password" /></label>
+              <p className="auth-subtitle" style={{ marginTop: 0, fontSize: 12 }}>Lost your password? Contact the CafeOS platform administrator for a secure reset.</p>
               <button disabled={!configured} className="auth-submit"><span>Sign in to CafeOS</span><span className="submit-arrow">↗</span></button>
             </form>
-            <div className="auth-divider"><span>NEW TO CAFEOS?</span></div>
-            <Link href="/signup" className="auth-create">Create your workspace <span>→</span></Link>
+            <div className="auth-divider"><span>SECURE RESTAURANT ACCESS</span></div>
+            <p className="auth-subtitle">Restaurant accounts are created by the CafeOS platform administrator. Public signup is disabled.</p>
             <p className="auth-privacy"><span>◈</span> Your workspace is protected by role-based access and database-level tenant isolation.</p>
           </div>
           <p className="auth-footer">A calmer shift starts here. <span>☕</span></p>
