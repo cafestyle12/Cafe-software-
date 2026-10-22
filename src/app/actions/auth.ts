@@ -58,10 +58,12 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
   const currentPassword = String(formData.get("current_password") ?? "");
+  const firstLoginForm = String(formData.get("first_login") ?? "") === "1";
+  const validationPrefix = firstLoginForm ? "/change-password?first=1&error=" : "/account-settings?error=";
   const passwordError = validateRestaurantPasswordChange(currentPassword, password, confirm);
-  if (passwordError === "weak_password") redirect("/change-password?error=Use%20a%2012%E2%80%93128%20character%20password%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
-  if (passwordError === "password_mismatch") redirect("/change-password?error=New%20passwords%20do%20not%20match");
-  if (passwordError === "must_differ_from_current") redirect("/change-password?error=Enter%20your%20current%20password%20and%20choose%20a%20different%20new%20password");
+  if (passwordError === "weak_password") redirect(validationPrefix + "Use%20a%2012%E2%80%93128%20character%20password%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
+  if (passwordError === "password_mismatch") redirect(validationPrefix + "New%20passwords%20do%20not%20match");
+  if (passwordError === "must_differ_from_current") redirect(validationPrefix + "Enter%20your%20current%20password%20and%20choose%20a%20different%20new%20password");
 
   const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
   const { adminFetch } = await import("@/lib/supabase/restaurant-auth");
