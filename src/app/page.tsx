@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const plannedCapabilities = [
   { title: "Point of sale", description: "Fast billing, cash handling, merchant UPI workflows, and receipts.", status: "Planned" },
   { title: "Kitchen operations", description: "Station-aware tickets, preparation status, timers, and alerts.", status: "Planned" },
@@ -9,9 +11,9 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-12">
       <header className="flex items-center justify-between border-b border-[var(--border)] pb-5">
-        <a href="/" className="text-lg font-bold tracking-tight" aria-label="CafeOS home">
+        <Link href="/" className="text-lg font-bold tracking-tight" aria-label="CafeOS home">
           Cafe<span className="text-[var(--accent)]">OS</span>
-        </a>
+        </Link>
         <span className="rounded-full border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--muted)]">Engineering preview</span>
       </header>
       <section className="grid flex-1 items-center gap-12 py-16 md:grid-cols-[1.2fr_0.8fr] md:py-24">
