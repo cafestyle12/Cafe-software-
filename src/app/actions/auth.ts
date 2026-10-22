@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { authApi, clearAuthSession, setAuthSession } from "@/lib/supabase/auth";
 import { validateRestaurantPasswordChange } from "@/lib/restaurant-credentials";
