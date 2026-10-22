@@ -213,3 +213,33 @@ revoke all on function private.is_tenant_member(uuid) from public, anon;
 grant execute on function private.is_tenant_member(uuid) to authenticated;
 revoke all on function private.has_tenant_permission(uuid, text) from public, anon;
 grant execute on function private.has_tenant_permission(uuid, text) to authenticated;
+
+
+create or replace function public.admin_set_restaurant_status(p_tenant_id uuid, p_status text)
+returns table(tenant_id uuid)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  if p_status not in ('active', 'suspended', 'deactivated') then
+    raise exception 'Invalid restaurant status' using errcode = '22023';
+  end if;
+  update public.restaurant_auth_accounts
+    set status = p_status, updated_at = now()
+    where public.restaurant_auth_accounts.tenant_id = p_tenant_id;
+  if not found then raise exception 'Restaurant account not found' using errcode = 'P0002'; end if;
+
+  update public.tenants
+    set status = case when p_status = 'deactivated' then 'closed' else p_status end,
+        updated_at = now()
+    where public.tenants.id = p_tenant_id;
+
+  insert into public.audit_events(tenant_id, actor_id, action, entity_type, entity_id)
+  values (p_tenant_id, null, 'platform.restaurant_status_changed', 'restaurant_auth_account', p_status);
+
+  return query select p_tenant_id;
+end;
+$function$;
+revoke all on function public.admin_set_restaurant_status(uuid, text) from public, anon, authenticated;
+grant execute on function public.admin_set_restaurant_status(uuid, text) to service_role;
