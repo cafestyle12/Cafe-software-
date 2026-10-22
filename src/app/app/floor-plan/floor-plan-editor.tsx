@@ -7,7 +7,7 @@ type TableItem={id:string;label:string;capacity:number;shape:string;x:number;y:n
 const initial:SaveFloorPlanState={};
 
 export function FloorPlanEditor({tenantId,branchId,version,tables}:{tenantId:string;branchId:string;version:number;tables:TableItem[]}) {
- const [positions,setPositions]=useState(()=>tables.map(t=>({id:t.id,x:Number(t.x),y:Number(t.y),width:Number(t.width),height:Number(t.height),rotation:Number(t.rotation)})));
+ const [positions,setPositions]=useState(()=>tables.filter(t=>t.status==="active").map(t=>({id:t.id,x:Number(t.x),y:Number(t.y),width:Number(t.width),height:Number(t.height),rotation:Number(t.rotation)})));
  const [dragging,setDragging]=useState<string|null>(null);
  const [state,action,pending]=useActionState(saveFloorPlanAction,initial);
  const [notice,setNotice]=useState("");
@@ -32,7 +32,7 @@ export function FloorPlanEditor({tenantId,branchId,version,tables}:{tenantId:str
     </div>
    </div>
    <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{tables.filter(t=>t.status!=="inactive").map(t=><div key={t.id} className="flex flex-wrap items-center gap-1 rounded-lg border border-[var(--border)] p-2"><span className="mr-1 text-xs font-semibold">{t.label}</span><button type="button" onClick={()=>update(t.id,{rotation:((positionById.get(t.id)?.rotation??0)+15)%360})} className="rounded border px-2 py-1 text-xs">Rotate</button><button type="button" onClick={()=>update(t.id,{width:Math.min(500,(positionById.get(t.id)?.width??t.width)+10)})} className="rounded border px-2 py-1 text-xs">W+</button><button type="button" onClick={()=>update(t.id,{width:Math.max(30,(positionById.get(t.id)?.width??t.width)-10)})} className="rounded border px-2 py-1 text-xs">W−</button><button type="button" onClick={()=>update(t.id,{height:Math.min(500,(positionById.get(t.id)?.height??t.height)+10)})} className="rounded border px-2 py-1 text-xs">H+</button><button type="button" onClick={()=>update(t.id,{height:Math.max(30,(positionById.get(t.id)?.height??t.height)-10)})} className="rounded border px-2 py-1 text-xs">H−</button></div>)}</div>
-   <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={()=>{setPositions(tables.map(t=>({id:t.id,x:Number(t.x),y:Number(t.y),width:Number(t.width),height:Number(t.height),rotation:Number(t.rotation)})));setNotice("Unsaved changes discarded.");}} className="rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold">Discard edits</button><button disabled={pending} className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending?"Saving…":"Save floor plan"}</button></div>
+   <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={()=>{setPositions(tables.filter(t=>t.status==="active").map(t=>({id:t.id,x:Number(t.x),y:Number(t.y),width:Number(t.width),height:Number(t.height),rotation:Number(t.rotation)})));setNotice("Unsaved changes discarded.");}} className="rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold">Discard edits</button><button disabled={pending} className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending?"Saving…":"Save floor plan"}</button></div>
   </form>
  </section>;
 }
