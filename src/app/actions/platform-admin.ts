@@ -1,6 +1,7 @@
 "use server";
 
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { generateTemporaryPassword } from "@/lib/restaurant-credentials";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
