@@ -159,3 +159,5 @@ Phase 02 remains IN PROGRESS, not accepted. Phase 03 has NOT STARTED.
 - [x] Rollback-only SQL test passed for first-login denial, active owner access, stale-version denial, suspended account and suspended tenant.
 - [ ] Configure missing Preview secrets and verify real Supabase Auth Admin API behavior with a controlled restaurant.
 - [ ] Deploy the latest branch head and run full live login/password/reset/suspend tests. Existing preview is an older commit.
+
+- [x] Closed direct tenant table INSERT bypass and RLS-bypassing TRUNCATE/REFERENCES/TRIGGER grants; verified no anon/authenticated dangerous table privileges remain.
