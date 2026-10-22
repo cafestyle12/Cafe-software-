@@ -3,7 +3,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
+import { getCurrentUser, siteUrl, supabaseRequest } from "@/lib/supabase/auth";
 
 function validLabel(value: string, max = 40) {
   return value.trim().length >= 1 && value.trim().length <= max;
@@ -96,6 +96,30 @@ export async function deactivateSeatingZoneAction(formData: FormData) {
     redirect("/app/floor-plan?error="+encodeURIComponent(message));
   }
   revalidatePath("/app/floor-plan"); redirect("/app/floor-plan?zoneDeactivated=1");
+}
+
+export type BatchQrItem = { tableId: string; tableLabel: string; url: string };
+export type BatchQrState = { error?: string; items?: BatchQrItem[] };
+
+export async function issueTableQrBatchAction(_previous: BatchQrState, formData: FormData): Promise<BatchQrState> {
+  const user=await requireOwnerSession();
+  const tenantId=String(formData.get("tenant_id")??"");
+  const branchId=String(formData.get("branch_id")??"");
+  const tableIds=[...new Set(formData.getAll("table_id").map(v=>String(v)).filter(Boolean))];
+  if(!tenantId||!branchId||tableIds.length<1||tableIds.length>50||tableIds.some(id=>!/^[0-9a-f-]{36}$/i.test(id))) return {error:"Select between 1 and 50 valid tables."};
+  const baseUrl=siteUrl();
+  if(!baseUrl) return {error:"The site URL is not configured. No QR credentials were issued."};
+  const inFilter=tableIds.map(id=>encodeURIComponent(id)).join(",");
+  const tables=await supabaseRequest<Array<{id:string;label:string;status:string}>>(`/rest/v1/cafe_tables?select=id,label,status&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&id=in.(${inFilter})&status=eq.active`);
+  if(tables.error||tables.data?.length!==tableIds.length) return {error:"One or more selected tables are unavailable."};
+  const tokens=tables.data.map(table=>({tableId:table.id,tableLabel:table.label,token:randomBytes(32).toString("base64url")}));
+  const result=await supabaseRequest<number>("/rest/v1/rpc/issue_table_qr_batch",{method:"POST",body:JSON.stringify({p_tenant_id:tenantId,p_branch_id:branchId,p_items:tokens.map(t=>({table_id:t.tableId,token_hash:createHash("sha256").update(t.token).digest("hex")}))})});
+  if(result.error) {
+    const message=result.error.includes("active_qr_exists")?"At least one selected table already has an active QR. Revoke it first, then retry the batch.":result.error.includes("permission_denied")?"Workspace access denied.":"The QR batch could not be issued. No partial batch was saved.";
+    return {error:message};
+  }
+  revalidatePath("/app/floor-plan");
+  return {items:tokens.map(t=>({tableId:t.tableId,tableLabel:t.tableLabel,url:baseUrl+"/t/"+t.token}))};
 }
 
 export type IssueQrState = { error?: string; url?: string; tableLabel?: string };
