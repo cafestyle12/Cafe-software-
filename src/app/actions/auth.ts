@@ -38,8 +38,9 @@ export async function signInAction(formData: FormData) {
   }
 
   const result = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password });
-  const authMetadata = (result.payload?.user as { app_metadata?: { cafeos_account_type?: string; account_status?: string; must_change_password?: boolean; session_version?: string } } | undefined)?.app_metadata;
-  if (!result.ok || !result.payload?.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id || authMetadata?.cafeos_account_type !== "restaurant_owner" || authMetadata.account_status !== "active" || authMetadata.session_version !== account.session_version) {
+  if (!result.ok) redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
+  const authMetadata = (result.payload.user as { app_metadata?: { cafeos_account_type?: string; account_status?: string; must_change_password?: boolean; session_version?: string } } | undefined)?.app_metadata;
+  if (!result.payload.access_token || !result.payload.refresh_token || result.payload.user?.id !== account.auth_user_id || authMetadata?.cafeos_account_type !== "restaurant_owner" || authMetadata.account_status !== "active" || authMetadata.session_version !== account.session_version) {
     redirect("/login?error=Invalid%20Restaurant%20ID%20or%20password");
   }
   await clearRestaurantLoginLimit(limit.keys);
@@ -57,10 +58,6 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm_password") ?? "");
   const currentPassword = String(formData.get("current_password") ?? "");
-  if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password) || password !== confirm) {
-    redirect("/change-password?error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol");
-  }
-
   const { getCurrentUser, currentAccessToken } = await import("@/lib/supabase/auth");
   const { adminFetch } = await import("@/lib/supabase/restaurant-auth");
   const user = await getCurrentUser();
@@ -75,6 +72,11 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const account = accounts.data?.[0];
   if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
   const firstLogin = appMetadata.must_change_password === true || account.must_change_password;
+  const passwordValidation = validateRestaurantPasswordChange(currentPassword, password, confirm, !firstLogin);
+  if (passwordValidation) {
+    const destination = firstLogin ? "/change-password?first=1" : "/account-settings";
+    redirect(`${destination}&error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol%20and%20a%20different%20password`);
+  }
 
   if (!firstLogin) {
     if (currentPassword.length < 1) redirect("/account-settings?error=Enter%20your%20current%20password");
