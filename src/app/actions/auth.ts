@@ -80,7 +80,6 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   if (!accounts.ok || !account || account.status !== "active") redirect("/login?error=Account%20is%20unavailable");
 
   const appMetadata = (user as { app_metadata?: { must_change_password?: boolean; account_status?: string; cafeos_account_type?: string; session_version?: string } }).app_metadata ?? {};
-  const firstLogin = account.must_change_password || appMetadata.must_change_password === true;
   if (appMetadata.cafeos_account_type !== "restaurant_owner") redirect("/login?error=Account%20is%20unavailable");
 
   const reauth = await authApi("/auth/v1/token?grant_type=password", { email: account.auth_email, password: currentPassword });
