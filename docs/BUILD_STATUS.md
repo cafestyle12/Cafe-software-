@@ -4,36 +4,36 @@ Last updated: 2026-10-22
 
 ## Current phase
 - Phase 00 — Complete.
-- Phase 01 — **Complete**. Engineering foundation and CI acceptance checks passed.
-- Phase 02 — Ready to begin when requested; not started in this change.
+- Phase 01 — Complete. Engineering foundation and CI acceptance checks passed.
+- Phase 02 — In progress. Authentication routes, workspace onboarding, tenant/branch schema, permission model, RLS, and audit foundation are implemented; automated CI and full auth-flow testing are still required.
 - Phases 03–16 — Not started.
 
 ## Verified environment facts
 - GitHub repository: cafestyle12/Cafe-software-; public; default branch main.
-- Supabase project selected for CafeOS: pryajliswtltcnbvcoiw; region ap-south-1. No CafeOS application schema changes were made in Phase 01.
-- User confirmed Vercel is now connected. Deployment was explicitly deferred, so this phase did not create a deployment, alter deployment settings, or configure production secrets.
-- No production credentials are committed to the repository.
+- Phase 02 work is isolated on branch phase-02/auth-multitenancy pending review.
+- Supabase project selected for CafeOS: pryajliswtltcnbvcoiw; region ap-south-1.
+- User confirmed Vercel is connected. Deployment remains explicitly deferred; no deployment or production environment configuration was triggered.
+- No production credentials or customer data were committed. The Phase 02 schema contains no tenant/member/customer rows; the global permission catalogue contains eight entries.
 
-## Phase 01 deliverables
-- Next.js App Router engineering-preview page, layout, metadata, global styles, and Tailwind configuration.
-- Strict TypeScript, ESLint flat configuration, Vitest, and deterministic GitHub Actions CI using the committed npm lockfile.
-- Unit tests covering the initial product-roadmap data and its explicit “Planned” status.
-- Environment variable names documented without secret values.
-- Architecture decisions, domain boundaries, proposed data model, threat model, offline/sync design, and phase acceptance checklist.
-- CI dependency installation avoids blocking on the npm audit endpoint; dependency vulnerability review remains a separate security task.
+## Phase 02 implementation
+- Supabase Auth sign-in, registration, sign-out, email confirmation, password recovery, and password update flows.
+- HttpOnly session cookies; request middleware validates access tokens and refreshes expired sessions; server-side requests use no-store caching.
+- Atomic workspace + first-branch onboarding; India-first defaults (Asia/Kolkata, INR).
+- Profiles, tenants, branches, memberships, branch memberships, roles, granular permissions, membership invitations model, and append-only audit events.
+- RLS enabled and forced on all eleven public tables. Policies use tenant membership, permission checks, and branch scope.
+- Tenant owner and default roles are provisioned by a database trigger. System roles are protected from ordinary role CRUD; role assignment changes require roles.manage; manager invitation policies cannot assign roles carrying roles.manage.
+- Security helper functions are in the private schema with fixed search paths and restricted execute grants.
+- SQL migration history in the connected Supabase project: phase_02_auth_tenants_rbac, phase_02_fix_tenant_owner_seed, phase_02_atomic_onboarding_and_role_guard, phase_02_security_performance_hardening, phase_02_protect_owner_membership.
+- Security advisor returned no findings after the Phase 02 migrations. Performance advisor has only unused-index informational notices, expected before any tenant data/query workload exists.
 
-## Phase 01 verification evidence
-- Successful GitHub Actions run: [run #23 — foundation validation](https://github.com/cafestyle12/Cafe-software-/actions/runs/39716566967).
-- Verified steps: locked dependency installation, ESLint, TypeScript type-check, Vitest unit tests, and Next.js production build — all passed.
-- Successful validation commit: `68dcf5b32a2e945ffba77796e2688b862fd0527f`.
-- No CafeOS database schema or production data was changed.
-
-## Phase 02 scope (not yet implemented)
-- Supabase Auth lifecycle, profiles, café/workspace and branch membership.
-- Server-side authorization, role and permission model, row-level security, and cross-tenant negative tests.
-- Protected routes, onboarding, invitation/disable/reset flows, and audit events.
+## Verification still required before Phase 02 acceptance
+- GitHub Actions CI must pass on the Phase 02 branch (lint, typecheck, unit tests, production build).
+- Complete end-to-end test with email confirmation and recovery links using the actual Supabase Auth email configuration.
+- Two-user cross-tenant negative tests and branch-scope tests against authenticated sessions.
+- Invitation delivery/acceptance and member disable/revoke flows are not complete; schema/policies exist, but end-to-end invite workflows are not yet implemented.
+- Session revocation, role-boundary tests, and production abuse/rate-limit review remain open.
 
 ## Operational notes
-- Deployment remains deferred until explicitly requested.
-- A successful foundation build is not a production launch; authentication, tenant isolation, payments, ordering, and live integrations are not enabled.
-- Run dependency vulnerability review separately and resolve advisories without forcing breaking framework upgrades.
+- Deployment is intentionally deferred.
+- Do not treat this engineering preview as a production launch. Ordering, payments, live café operations, and integrations remain disabled.
+- Dependency vulnerability review remains a separate security task; do not force breaking framework upgrades to silence advisories.
