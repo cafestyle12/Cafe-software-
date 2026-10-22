@@ -16,7 +16,7 @@ The existing Phase 02 schema remains in place: profiles, tenants, branches, memb
 
 ## Migration safety
 
-Migration file: supabase/migrations/20261022143000_phase_02_restaurant_id_auth.sql
+Migration file: supabase/migrations/20261022091308_phase_02_restaurant_id_auth.sql
 
 The migration adds tables, functions, grants and function replacements only. It does not change existing tenant data or Auth users. Existing email users without a mapping remain present but cannot sign in through the Restaurant ID flow until an administrator provisions a mapped owner account. The currently inspected database has zero tenant rows and two profile rows.
 
