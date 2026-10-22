@@ -130,6 +130,7 @@ export async function resetRestaurantPasswordAction(_previous: ResetPasswordStat
   );
   if (!locked.ok || !locked.data?.length) return { error: "Could not lock the account for credential reset." };
   const user = await adminFetch<{ app_metadata?: Record<string, unknown> }>(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`);
+  if (!user.ok || !user.data) return { error: "Account is safely locked, but Auth metadata could not be read. Retry after checking the Supabase secret." };
   const updated = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(account.auth_user_id)}`, {
     method: "PUT",
     body: JSON.stringify({ password, app_metadata: { ...(user.data?.app_metadata ?? {}), must_change_password: true, account_status: account.status } }),
