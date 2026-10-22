@@ -10,14 +10,19 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
   let response = NextResponse.next({ request });
 
-  if (!url || !key || !accessToken) return response;
+  if (!url || !key || (!accessToken && !refreshToken)) return response;
 
   try {
-    const check = await fetch(`${url}/auth/v1/user`, {
-      headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-    if (check.ok || !refreshToken || (check.status !== 401 && check.status !== 403)) return response;
+    // Refresh the access token when it expires or the access cookie is missing.
+    // The refresh cookie is HttpOnly and survives ordinary browser restarts.
+    if (accessToken) {
+      const check = await fetch(`${url}/auth/v1/user`, {
+        headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (check.ok || !refreshToken || (check.status !== 401 && check.status !== 403)) return response;
+    }
+    if (!refreshToken) return response;
 
     const refreshed = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
       method: "POST",
