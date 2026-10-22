@@ -91,6 +91,6 @@ The latest READY Vercel preview inspected is behind the current branch head, and
 
 ## Phase 03 test plan and current evidence — 2026-10-22
 
-Automated CI covers `npm ci`, ESLint, TypeScript, Vitest and production build. Unit tests exercise the local QR encoder's matrix generation and deterministic output; Restaurant ID tests cover custom-format validation including internal spaces. A prior CI run (#509) passed after floor-plan resizing/inactive-table fixes; the later database-hardening commit's run must also pass before acceptance.
+Automated CI covers `npm ci`, ESLint, TypeScript, Vitest and production build. Unit tests exercise the local QR encoder's matrix generation and deterministic output; Restaurant ID tests cover custom-format validation including internal spaces. Branch-head CI run #516 passed install, ESLint, TypeScript, Vitest and production build on commit `045dd32a0e05e4694fb836f43ea82ce87e172577`.
 
 Database smoke checks confirm RLS/FORCE RLS, anonymous direct SELECT denied, private session-table direct SELECT denied, authenticated-only batch QR RPC, intended anonymous QR/session RPC grants, one-active-QR index, and generic invalid-token output. Still required: run a fresh Preview browser smoke test, scan/print a real issued QR, and test owner tenant isolation and session/revoke workflows using a controlled test account.
