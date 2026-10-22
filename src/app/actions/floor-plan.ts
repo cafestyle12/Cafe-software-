@@ -40,6 +40,22 @@ export async function createCafeTableAction(formData: FormData) {
   redirect("/app/floor-plan?created=1");
 }
 
+export async function updateCafeTableAction(formData: FormData) {
+  await requireOwnerSession();
+  const tenantId=String(formData.get("tenant_id")??"");
+  const branchId=String(formData.get("branch_id")??"");
+  const tableId=String(formData.get("table_id")??"");
+  const label=String(formData.get("label")??"").trim();
+  const capacity=Number(formData.get("capacity")??0);
+  const zoneId=String(formData.get("zone_id")??"").trim()||null;
+  const shape=String(formData.get("shape")??"");
+  if(!tenantId||!branchId||!tableId||!validLabel(label)||!Number.isInteger(capacity)||capacity<1||capacity>100||!["round","square","rectangle","booth"].includes(shape)) redirect("/app/floor-plan?error=Invalid%20table%20details");
+  const result=await supabaseRequest(`/rest/v1/cafe_tables?id=eq.${encodeURIComponent(tableId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({label,capacity,zone_id:zoneId,shape,width:shape==="rectangle"?140:90,height:shape==="rectangle"?80:90,updated_at:new Date().toISOString()})});
+  if(result.error) redirect("/app/floor-plan?error="+encodeURIComponent(result.error.includes("unique")?"That table label already exists in this branch.":result.error));
+  revalidatePath("/app/floor-plan");
+  redirect("/app/floor-plan?updated=1");
+}
+
 export async function createSeatingZoneAction(formData: FormData) {
   await requireOwnerSession();
   const tenantId=String(formData.get("tenant_id")??"");
