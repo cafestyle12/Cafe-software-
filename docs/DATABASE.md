@@ -70,3 +70,11 @@ Do not manually edit auth.users or store passwords in public tables.
 ## Final table privilege hardening — migration 20261022094402
 - The audit found default browser-role grants included TRUNCATE, REFERENCES and TRIGGER on public tables. TRUNCATE bypasses RLS, so the new migration removes these privileges from PUBLIC/anon/authenticated across existing public tables and adjusts postgres default privileges for future tables. It also revokes all table privileges from anon.
 - Post-migration verification returned no TRUNCATE/REFERENCES/TRIGGER grants for anon or authenticated. The tenants table has INSERT only for postgres/service_role; no browser role can create a tenant directly.
+
+
+## Phase 03 additive schema (migration 20261023100000)
+- Adds optional restaurant profile fields to `tenants` and branch code/address/contact/opening-hours fields to existing `branches`.
+- Adds `seating_zones`, `cafe_tables`, `floor_plan_layouts`, `table_qr_credentials`, and `table_sessions` with tenant/branch composite foreign keys, normalized per-branch label uniqueness, shape/capacity/coordinate checks, and indexes.
+- RLS is enabled and forced on all five new tables. Authenticated access is permission-gated with existing `private.has_tenant_permission`; QR session table has no browser-role grants. Public clients may execute only `resolve_table_qr(text)`, which hashes the opaque token and returns minimum public display fields or a generic invalid result.
+- QR credentials store only SHA-256 token hashes; raw token is returned once to the authorized operator. QR route tokens are random 32-byte base64url strings. QR credential rows are revocable.
+- Migration applied to the connected Supabase project. RLS flag verification and invalid-token RPC smoke test passed. Full cross-tenant integration tests are still required.
