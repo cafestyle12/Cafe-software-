@@ -23,9 +23,9 @@ Last updated: 2026-10-22
 - RLS enabled and forced on all eleven public tables. Policies use tenant membership, permission checks, and branch scope.
 - Tenant owner and default roles are provisioned by a database trigger. System roles are protected from ordinary role CRUD; role assignment changes require roles.manage; manager invitation policies cannot assign roles carrying roles.manage.
 - Security helper functions are in the private schema with fixed search paths and restricted execute grants.
-- SQL migration history in the connected Supabase project: phase_02_auth_tenants_rbac, phase_02_fix_tenant_owner_seed, phase_02_atomic_onboarding_and_role_guard, phase_02_security_performance_hardening, phase_02_protect_owner_membership, phase_02_invite_acceptance_rpc, phase_02_tenant_profile_visibility, phase_02_consolidate_profile_read_policy.
+- SQL migration history in the connected Supabase project: phase_02_auth_tenants_rbac, phase_02_fix_tenant_owner_seed, phase_02_atomic_onboarding_and_role_guard, phase_02_security_performance_hardening, phase_02_protect_owner_membership, phase_02_invite_acceptance_rpc, phase_02_tenant_profile_visibility, phase_02_consolidate_profile_read_policy, phase_02_strict_branch_scope.
 - Security advisor returned no findings after the Phase 02 migrations. Performance advisor has only unused-index informational notices, expected before any tenant data/query workload exists.
-- Transactional SQL security test passed against the connected project: tenant A/B isolation, cross-tenant branch insert denial, owner-membership protection, manager role-assignment boundary, and prevention of manager-created owner invitations. All fixture rows were rolled back.
+- Transactional SQL security test passed against the connected project: tenant A/B isolation, cross-tenant branch insert denial, explicit branch-scope enforcement, owner-membership protection, manager role-assignment boundary, and prevention of manager-created owner invitations. All fixture rows were rolled back.
 
 ## Verification still required before Phase 02 acceptance
 - Latest recorded CI run #38 passed on commit 8d6eeaca5bd739a9d22e2307085d4d4d94ece825. A later commit adds only the transactional SQL test script and does not change TypeScript runtime code.
