@@ -78,3 +78,10 @@ Do not manually edit auth.users or store passwords in public tables.
 - RLS is enabled and forced on all five new tables. Authenticated access is permission-gated with existing `private.has_tenant_permission`; QR session table has no browser-role grants. Public clients may execute only `resolve_table_qr(text)`, which hashes the opaque token and returns minimum public display fields or a generic invalid result.
 - QR credentials store only SHA-256 token hashes; raw token is returned once to the authorized operator. QR route tokens are random 32-byte base64url strings. QR credential rows are revocable.
 - Migration applied to the connected Supabase project. RLS flag verification and invalid-token RPC smoke test passed. Full cross-tenant integration tests are still required.
+
+
+## Phase 03 database notes — 2026-10-22
+
+The operational schema is additive: `seating_zones`, `cafe_tables`, `floor_plan_layouts`, `table_qr_credentials`, and `table_sessions`. All five tables have RLS enabled and FORCE RLS. Browser roles have no anonymous direct SELECT; authenticated users have no direct access to `table_sessions`. Tenant/branch/table composite foreign keys prevent cross-branch assignment, and a partial unique index permits at most one active QR credential per table.
+
+The public-facing RPCs are `resolve_table_qr(text)` (safe labels only) and `initialize_table_session(text,text)` (opaque session token, hash stored, four-hour expiry, idempotency and 25-active-session-per-table cap). Management RPCs enforce `auth.uid()` and `private.has_tenant_permission(...,'branch.manage')`; they perform atomic deactivation/revocation and optimistic floor-plan saves. See `docs/SECURITY.md` for intentional SECURITY DEFINER rationale and current advisor warnings.
