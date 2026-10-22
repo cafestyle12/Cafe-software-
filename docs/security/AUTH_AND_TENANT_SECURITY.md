@@ -6,7 +6,7 @@
 - Access and refresh tokens are stored in HttpOnly, SameSite=Lax cookies; Secure is enabled in production.
 - Request middleware validates the access token and attempts refresh only for a 401/403 response. Transient network failures do not clear the session.
 - Server components revalidate the access token against the Auth API before rendering user-specific data. Authenticated fetches use cache: no-store.
-- Configure Supabase Auth Site URL, allowed redirect URLs, and email templates for each local/staging origin. The /auth/confirm endpoint validates token fragments with the Auth API or verifies a token hash server-side.
+- For the current preview, configure Supabase Auth Site URL and allowed redirect URLs for `https://cafe-software-git-phase-02-auth-multitenancy-edityyp.vercel.app`. The `/auth/confirm` endpoint validates token fragments with the Auth API or verifies a token hash server-side.
 - Set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, and NEXT_PUBLIC_SITE_URL. Invite delivery/acceptance also requires SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY, server-only. Never put a secret/service-role key in a NEXT_PUBLIC_ variable.
 
 ## Tenant boundaries
@@ -20,7 +20,7 @@
 - Audit events are append-only for authenticated users; no update/delete policy is provided.
 
 ## Current limitations / next checks
-- Email delivery depends on the Supabase Auth SMTP and email-template settings.
-- Invitation delivery/acceptance and member disable/revoke actions are implemented but need end-to-end tests with a real test inbox.
+- Email delivery depends on the Supabase Auth SMTP and email-template settings. The preview branch URL and public Supabase environment variables are configured; the allowed redirect URL still needs confirmation in Supabase Auth settings.
+- Invitation delivery/acceptance and member disable/revoke actions are implemented but need a server-only `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in Vercel Preview plus end-to-end tests with a real test inbox.
 - Custom role management and branch assignment UI, rate limits, abuse monitoring, session revocation, and production key rotation remain acceptance items.
 - Transactional RLS negative tests were executed against the connected project with two tenant owners and a manager identity; cross-tenant reads/writes, unassigned-branch reads, and manager-to-owner escalation attempts were denied. Fixtures were rolled back.\n- Still test disabled/revoked memberships, explicit branch-scope assignments, expired confirmation links, recovery-link replay, invitation acceptance, and session refresh with actual browser sessions.
