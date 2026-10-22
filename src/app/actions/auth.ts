@@ -93,13 +93,22 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
     redirect("/change-password?error=Current%20password%20is%20incorrect");
   }
 
-  // Reconcile stale metadata to the restrictive state before touching the password.
-  if (firstLogin && appMetadata.must_change_password !== true) {
+  // If the mapping says first-login is required but this JWT has stale, less
+  // restrictive metadata, repair the Auth flag and revoke this stale session.
+  // The owner signs in again to receive a JWT that is denied by RLS until change.
+  if (account.must_change_password && appMetadata.must_change_password !== true) {
     const lockedMetadata = await adminFetch(`/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
       method: "PUT",
       body: JSON.stringify({ app_metadata: { ...appMetadata, must_change_password: true, account_status: "active" } }),
     });
     if (!lockedMetadata.ok) redirect("/change-password?error=Could%20not%20securely%20prepare%20the%20first-login%20password%20change.%20Please%20retry");
+    await fetch(`${cfgUrl}/auth/v1/logout?scope=global`, {
+      method: "POST",
+      headers: { apikey: cfgKey, Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    }).catch(() => null);
+    await clearAuthSession();
+    redirect("/login?notice=Security%20state%20was%20updated.%20Sign%20in%20again%20to%20change%20your%20temporary%20password");
   }
 
   // Keep must_change_password=true in Auth metadata until the DB update succeeds.
