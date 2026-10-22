@@ -41,7 +41,7 @@ export async function signUpAction(formData: FormData) {
   if (!result.ok) redirect(`/signup?error=${encodeURIComponent(result.error)}`);
   if (result.payload?.access_token && result.payload.refresh_token) {
     await setAuthSession({ access_token: result.payload.access_token, refresh_token: result.payload.refresh_token, expires_in: result.payload.expires_in, user: result.payload.user });
-    redirect("/onboarding");
+    redirect("/welcome");
   }
   redirect("/login?notice=Check%20your%20email%20to%20confirm%20your%20CafeOS%20account%20before%20signing%20in");
 }
@@ -97,7 +97,7 @@ export async function completeAuthSessionAction(accessToken: string, refreshToke
   const user = await verified.json() as { id: string; email?: string; user_metadata?: { full_name?: string; name?: string } };
   if (type === "invite") await acceptInvitation(inviteId, user.id, user.email ?? "");
   await setAuthSession({ access_token: accessToken, refresh_token: refreshToken, expires_in: 3600, user });
-  redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : "/onboarding");
+  redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : type === "signup" || type === "email" ? "/welcome" : "/onboarding");
 }
 
 export async function verifyConfirmationAction(tokenHash: string, type: string, inviteId = "") {
@@ -118,7 +118,7 @@ export async function verifyConfirmationAction(tokenHash: string, type: string, 
   if (session.access_token && session.refresh_token) {
     if (type === "invite") await acceptInvitation(inviteId, session.user?.id ?? "", session.user?.email ?? "");
     await setAuthSession({ access_token: session.access_token, refresh_token: session.refresh_token, expires_in: session.expires_in, user: session.user });
-    redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : "/onboarding");
+    redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : type === "signup" || type === "email" ? "/welcome" : "/onboarding");
   }
   redirect("/login?notice=Email%20confirmed.%20You%20can%20now%20sign%20in");
 }
