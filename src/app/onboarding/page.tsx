@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createTenantAction } from "@/app/actions/tenant";
-import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
 export default async function OnboardingPage({ searchParams }: Props) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const memberships = await supabaseRequest<Array<{ id: string }>>(
-    `/rest/v1/memberships?select=id&user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&limit=1`,
-  );
-  if (memberships.data?.length) redirect("/app");
   const params = await searchParams;
   const fullName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "";
   return (
