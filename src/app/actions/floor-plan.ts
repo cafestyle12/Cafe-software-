@@ -146,7 +146,7 @@ export async function issueTableQrAction(_previous: IssueQrState, formData: Form
   if(!tenantId||!branchId||!tableId) return {error:"Missing table details."};
   const table=await supabaseRequest<Array<{id:string;label:string;status:string}>>(`/rest/v1/cafe_tables?select=id,label,status&id=eq.${encodeURIComponent(tableId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active&limit=1`);
   if(table.error||!table.data?.length) return {error:"Table access denied."};
-  const baseUrl=process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/,"");
+  const baseUrl=siteUrl();
   if(!baseUrl) return {error:"NEXT_PUBLIC_SITE_URL is not configured. No QR credential was issued."};
   const token=randomBytes(32).toString("base64url");
   const tokenHash=createHash("sha256").update(token).digest("hex");
