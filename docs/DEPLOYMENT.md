@@ -35,3 +35,14 @@ Set Supabase Auth Site URL to the exact intended application origin and add the 
 
 ## Current limitations
 The connected Vercel deployment-list API returned 403 during the 2026-10-22 audit, so the latest deployment status/commit could not be independently verified. A previous note identifies the preview alias and a READY deployment, but that is not evidence the latest email fix has deployed.
+
+
+## Restaurant ID authentication environment setup
+Required for Preview before owner login or provisioning can work:
+- SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY — server-only, never NEXT_PUBLIC.
+- CAFEOS_PLATFORM_ADMIN_TOKEN — generate a random token of at least 32 characters and keep it private.
+- CAFEOS_RATE_LIMIT_SECRET — optional; if omitted, the server-only Supabase secret salts rate-limit keys.
+
+Set these only in Vercel Preview for branch phase-02/auth-multitenancy first. The connected Vercel environment-variable API did not permit inspection during this run, so presence is unverified. After configuration, redeploy the preview, apply the additive migration, then use a controlled test restaurant. Do not set Production variables or deploy production without explicit authorization.
+
+The new protected platform admin console is at /platform-admin; owner login is /login; forced first-login password change is /change-password; later password changes are at /account-settings.
