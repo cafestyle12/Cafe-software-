@@ -60,7 +60,7 @@ Unit tests added for Restaurant ID format/normalization, generated temporary-pas
 
 ## Current rebuild verification notes — 2026-10-22
 
-- Unit tests cover Restaurant ID normalization/format, temporary password complexity, random internal alias format, and password-change policy including strength, confirmation mismatch, and rejecting reuse of the temporary/current password.
-- Supabase migration `20261022150000_phase_02_auth_jwt_first_login_guard` was applied successfully. This is not equivalent to an end-to-end owner login test.
+- Unit tests cover Restaurant ID normalization/format, temporary password complexity, random internal alias format, and password-change policy including strength, confirmation mismatch, and rejecting reuse of the temporary/current password. Provisioning, reset, suspension/reactivation and password changes must also be checked for session-version rotation.
+- Supabase migration `20261022151000_phase_02_auth_first_login_claim_guard` was applied successfully. This is not equivalent to an end-to-end owner login test.
 - The current identity design is Restaurant ID lookup on the server followed by Supabase's standard email/password grant with the private mapped alias. Supabase does not offer arbitrary username/password as a native password identity.
 - Still required before acceptance: green CI for the latest commit; verify Preview deployment SHA; controlled admin provisioning and login; first-login change and old-password rejection; later change/re-auth; reset/suspension behavior; two-tenant RLS negative tests using current code; confirm no owner-facing email auth flow remains. These checks must not be marked passed until actually run.
