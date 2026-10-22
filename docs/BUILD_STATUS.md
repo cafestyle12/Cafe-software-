@@ -145,43 +145,29 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Supabase leaked-password protection remains disabled and must be enabled before production. The internal .invalid alias and full Admin API flow remain unverified because the server secret is not configured/available to this run.
 
 
-## Phase 03 implementation started — 2026-10-22
-- Work is isolated on `phase-03/branches-tables-floor-qr`, based on `phase-02/auth-multitenancy`. No merge to `main` and no production deployment was performed.
-- Added the additive migration `20261023100000_phase_03_branches_tables_floor_qr.sql`; it was applied successfully to Supabase project `pryajliswtltcnbvcoiw`.
-- Verified via SQL that `seating_zones`, `cafe_tables`, `floor_plan_layouts`, `table_qr_credentials`, and `table_sessions` all have RLS enabled and forced. A direct invalid-token call to `resolve_table_qr` returned only a generic invalid result.
-- Added authenticated workspace pages for branch creation and basic table/zone management; QR credential issuance stores a SHA-256 hash and shows the raw token once without putting it into the admin URL. Public table route returns only restaurant/branch/table display data.
-- Changed platform-admin Restaurant ID input to accept custom IDs: 3–32 characters, letters/numbers/hyphens/underscores, starting with a letter or number; normalized to uppercase and uniqueness enforced by the existing mapping plus a new tenant profile index.
-- NOT COMPLETE: no automated CI result has yet been verified for the Phase 03 branch; interactive drag/resize/rotate floor-plan editing, layout version-conflict action, table/branch edit/deactivate flows, QR artwork/download/print/batch export, and idempotent customer table-session initialization remain to implement. Phase 03 acceptance gate remains open. Phase 04 has not started.
+## Phase 03 — current implementation and acceptance gate (2026-10-22)
 
+Implementation is isolated on `phase-03/branches-tables-floor-qr`, based on the Phase 02 Restaurant ID + password foundation. Phase 04 has not started. No merge to `main` or production deployment was performed.
 
-## Phase 03 current implementation record — 2026-10-22
-- Work is isolated on `phase-03/branches-tables-floor-qr`. Phase 02 Restaurant ID + password authentication was not intentionally redesigned. The platform-admin provisioning form now accepts user-chosen Restaurant IDs in the format documented by the validator.
-- Applied migrations in the connected Supabase project: `phase_03_branches_tables_floor_qr`, `phase_03_floor_plan_optimistic_save`, and `phase_03_table_session_initialization`. The QR resolution function was smoke-tested with an invalid token and returned a generic invalid result. RLS/FORCE RLS flags were inspected for the five new operational tables.
-- Implemented initial branch creation/edit/deactivation controls, table and zone creation, table editing, QR credential issue/revoke actions, public QR resolution page, interactive drag/keyboard floor-plan editor and optimistic layout-save RPC, plus a public session initialization route and session UI.
-- **Still incomplete / not verified:** QR image/SVG/PNG generation and decoding, batch export/print layouts, full restaurant profile UI, zone edit/deactivate and table deactivation dependency guards, QR/session rate limiting, comprehensive tenant-isolation tests, lint/typecheck/build and browser E2E for the latest commit. Session initialization concurrency and revoke races need tests. Do not call Phase 03 complete yet.
-- Vercel status check reported deployment rate-limited with a 24-hour retry; no successful Phase 03 deployment URL is verified. CI workflow was updated to include `phase-03/**`; latest run has not yet been observed.
-- Phase 04 Menu and Product Catalog has not started.
+### Implemented
 
+- Restaurant profile editor: restaurant display name, contact phone/email (contact-only; never used for login), address and default timezone.
+- Branch create/edit/deactivate. Deactivation is an atomic database operation: it refuses while active table sessions exist, revokes QR credentials, inactivates tables/zones, then inactivates the branch.
+- Seating zone create/rename/deactivate. A zone with active tables cannot be deactivated.
+- Table create/edit/deactivate, capacity, zone assignment, shape, dimensions, position and rotation. Table deactivation refuses while active sessions exist and revokes QR credentials atomically.
+- Interactive drag/keyboard movement, rotation, width/height controls, save/discard, server-side validation and optimistic layout-version conflict detection.
+- Individual QR issue/revoke and atomic batch issuance for up to 50 tables. QR codes are generated locally in SVG (no third-party QR image service), can be downloaded and printed individually or as a multi-card print sheet. Only SHA-256 token hashes are stored. The raw QR URL is shown once after issuance; an active QR must be revoked before replacement.
+- Database-enforced one-active-QR-per-table constraint. Revoking a QR also revokes sessions created from it.
+- Public QR landing page returns only public-safe restaurant/branch/table fields. Table session initialization uses an opaque random session token, hash-at-rest storage, four-hour expiry, idempotency handling, serialization against duplicate concurrent creation, and a maximum of 25 active sessions per table.
+- Restaurant ID remains custom: 3–32 characters; letters, numbers, hyphens and underscores; first character must be a letter or number; no spaces; normalized uppercase and unique mapping enforced.
+- Public QR routes set no-store and no-referrer headers to reduce token caching/referrer leakage.
+- Additive Supabase migrations are applied to project `pryajliswtltcnbvcoiw`: `phase_03_branches_tables_floor_qr`, `phase_03_floor_plan_optimistic_save`, `phase_03_table_session_initialization`, `phase_03_table_session_initialization_idempotency_fix`, `phase_03_safe_lifecycle_rpcs`, `phase_03_batch_qr_issuance`, `phase_03_qr_session_abuse_guard`, `phase_03_single_active_qr`, `phase_03_floor_plan_resize`, `phase_03_atomic_qr_revocation`, `phase_03_session_idempotency_reuse`, and `phase_03_database_hardening`.
+- Database checks confirm RLS and FORCE RLS for all five operational tables, anonymous direct table SELECT denied, authenticated direct access to private `table_sessions` denied, only intended QR/session RPCs callable by anonymous users, batch QR RPC restricted to authenticated users, and one-active-QR uniqueness index present. Invalid QR resolution returned a generic invalid result without private data.
 
-## Phase 03 implementation update — 2026-10-22 (supersedes earlier Phase 03 status above)
+### Verification and remaining gate
 
-Implemented on `phase-03/branches-tables-floor-qr` only; Phase 04 has not started and no production merge/deployment was performed.
-
-- Restaurant profile fields and editor: display name, contact phone/email (contact-only, not login), address, default timezone.
-- Branch create/edit/deactivate with timezone/address/contact fields; atomic branch deactivation refuses while active table sessions exist and revokes QR credentials before marking related operational records inactive.
-- Seating zone create/rename/deactivate; active tables must be moved or deactivated before a zone can be deactivated.
-- Table create/edit/deactivate, capacity, zone, shape, width/height, position and rotation; table deactivation checks active sessions and atomically revokes related QR credentials.
-- Interactive drag/keyboard move, rotate, resize, save/discard and optimistic layout version checks.
-- Per-table QR issue/revoke; QR secrets are random, only SHA-256 hashes are stored, raw token is shown only on successful issue, and revoke atomically revokes sessions created from that QR.
-- Local QR encoder (no QR-token transmission to an external QR-image service), SVG download and print card; atomic batch issue for up to 50 tables at a time, individual SVG downloads and multi-card print sheet. One-active-QR-per-table is enforced by a partial unique index.
-- Public QR landing resolves only public-safe restaurant/branch/table fields. Session initialization uses an opaque random token, hashed-at-rest storage, four-hour expiry, idempotency key, serialized creation and a 25-active-session-per-table cap. Ordering/payment remain out of scope.
-- Restaurant ID input remains custom and normalized: 3–32 characters; letters, digits, hyphen, underscore; first character must be a letter or digit; no spaces. Unique tenant mapping remains enforced.
-- Additive Supabase migrations applied: `phase_03_safe_lifecycle_rpcs`, `phase_03_batch_qr_issuance`, `phase_03_qr_session_abuse_guard`, `phase_03_single_active_qr`, `phase_03_floor_plan_resize`, and `phase_03_atomic_qr_revocation`, in addition to the original Phase 03 migrations.
-- Database inspection confirms RLS and FORCE RLS are enabled for all five operational tables; anonymous direct table SELECT is denied, and authenticated direct access to private `table_sessions` is denied. Public QR/session access is only through narrow RPCs.
-
-### Acceptance status (do not overstate)
-
-- The branch has repeated CI runs while changes were being iterated. A previous commit passed CI after the QR encoder namespace/import corrections, but later floor-plan resize and lifecycle changes then required additional fixes. **The latest branch-head CI run must be green before acceptance.**
-- Vercel's check has reported `build-rate-limit`; latest Phase 03 code is not confirmed deployed to Preview. Do not claim browser end-to-end verification or successful latest deployment until a fresh Preview is available and tested.
-- Live tenant-isolation and authenticated browser workflows (restaurant profile, branch/zone/table lifecycle, QR scan/session, revoke/regenerate, batch printing) still require end-to-end verification with an authorized Preview account.
-- Phase 03 is not accepted until latest CI passes and Preview/browser checks are completed. Phase 04 remains unstarted; production merge/deployment remains unauthorized.
+- The CI workflow runs install, ESLint, TypeScript type-check, Vitest and production build. Run #509 passed after the floor-plan resize and inactive-table fixes. Runs for the later database-hardening commit are still in progress at the time of this note; **do not mark the branch accepted until the latest branch-head run is green**.
+- Supabase advisors still flag the intentionally public `resolve_table_qr` and `initialize_table_session` SECURITY DEFINER RPCs, which are deliberately narrow, use an empty search path, return only safe fields/opaque session credentials, and validate tokens. Authenticated management RPCs are also SECURITY DEFINER but enforce `auth.uid()` plus tenant permission checks. Advisor also reports three RLS-enabled/no-policy tables (`auth_attempt_windows`, `restaurant_auth_accounts`, `table_sessions`); these are intentionally private/service-only.
+- The existing project-level leaked-password protection warning remains from the Phase 02 Auth configuration and must be enabled in Supabase Auth settings before production.
+- Vercel's recent check has reported `build-rate-limit`, and the Vercel deployment-list API returned 403. The latest Phase 03 commit is not yet confirmed deployed to Preview. A fresh Preview deployment and browser E2E smoke test are still required; authenticated tenant-isolation and real QR scan/print workflows cannot be claimed verified until tested there.
+- Phase 03 is **not accepted** until the latest CI run passes and Preview/browser verification is completed. Phase 04 remains unstarted; production merge/deployment remains unauthorized.
