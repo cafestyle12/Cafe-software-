@@ -64,3 +64,8 @@ Restaurant ID login is a server-side mapping to a random `.invalid` Supabase Aut
 - Development branch: `phase-03/branches-tables-floor-qr`.
 - Supabase migration `phase_03_branches_tables_floor_qr` is applied to the connected project. The app needs `NEXT_PUBLIC_SITE_URL` set to the intended public application origin for QR URLs; do not substitute localhost or assume the production domain.
 - No Phase 03 Vercel deployment has been verified. Do not merge or deploy production without explicit authorization. Verify CI and deploy the branch to Preview before end-to-end QR testing.
+
+
+## Phase 03 preview deployment gate — 2026-10-22
+
+Deploy only the `phase-03/branches-tables-floor-qr` branch to Vercel Preview after latest CI is green. Do not merge or deploy Production. Recent Vercel status reported `build-rate-limit`; the connected deployment-list API returned 403, so no successful deployment of the latest Phase 03 commit is confirmed. After a fresh Preview is available, verify environment variables, public QR invalid-token behavior, owner profile/branch/table workflows, QR issue/revoke/batch print, and session initialization before accepting Phase 03.
