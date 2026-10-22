@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { completeAuthSessionAction, verifyConfirmationAction } from "@/app/actions/auth";
 
-type Props = { tokenHash: string; initialType: string; initialError: string };
+type Props = { tokenHash: string; initialType: string; inviteId: string; initialError: string };
 
-export function ConfirmationClient({ tokenHash, initialType, initialError }: Props) {
+export function ConfirmationClient({ tokenHash, initialType, inviteId, initialError }: Props) {
   const [error, setError] = useState(initialError);
   const [working, setWorking] = useState(!initialError);
 
@@ -24,14 +24,14 @@ export function ConfirmationClient({ tokenHash, initialType, initialError }: Pro
     const refreshToken = hash.get("refresh_token");
     if (accessToken && refreshToken && type) {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      void completeAuthSessionAction(accessToken, refreshToken, type).catch(() => {
+      void completeAuthSessionAction(accessToken, refreshToken, type, inviteId).catch(() => {
         setError("This confirmation link is invalid or expired. Request a fresh link and try again.");
         setWorking(false);
       });
       return;
     }
     if (tokenHash && type) {
-      void verifyConfirmationAction(tokenHash, type).catch(() => {
+      void verifyConfirmationAction(tokenHash, type, inviteId).catch(() => {
         setError("This confirmation link is invalid or expired. Request a fresh link and try again.");
         setWorking(false);
       });
@@ -39,7 +39,7 @@ export function ConfirmationClient({ tokenHash, initialType, initialError }: Pro
     }
     setError("No valid confirmation token was found. Open the latest link from your email.");
     setWorking(false);
-  }, [initialError, initialType, tokenHash]);
+  }, [initialError, initialType, inviteId, tokenHash]);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-6 py-12">
