@@ -29,17 +29,14 @@ export async function updateBranchAction(formData:FormData) {
 }
 
 export async function deactivateBranchAction(formData:FormData) {
- const user=await requireOwner();
+ await requireOwner();
  const tenantId=String(formData.get("tenant_id")??"");
  const branchId=String(formData.get("branch_id")??"");
  if(!tenantId||!branchId) redirect("/app/branches?error=Missing%20branch");
- const member=await supabaseRequest<Array<{id:string}>>(`/rest/v1/memberships?select=id&tenant_id=eq.${encodeURIComponent(tenantId)}&user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&limit=1`);
- if(member.error||!member.data?.length) redirect("/app/branches?error=Workspace%20access%20denied");
- const deps=await supabaseRequest<Array<{id:string}>>(`/rest/v1/table_sessions?select=id&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&limit=1`);
- if(deps.data?.length) redirect("/app/branches?error=This%20branch%20has%20an%20active%20table%20session.%20Resolve%20it%20before%20deactivation.");
- const r=await supabaseRequest(`/rest/v1/branches?id=eq.${encodeURIComponent(branchId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&status=eq.active`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"inactive",updated_at:new Date().toISOString()})});
- if(r.error) redirect("/app/branches?error=Could%20not%20deactivate%20branch.");
- const qr=await supabaseRequest(`/rest/v1/table_qr_credentials?tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"revoked",revoked_at:new Date().toISOString()})});
- if(qr.error) redirect("/app/branches?error=Branch%20was%20deactivated%20but%20QR%20revocation%20needs%20administrator%20review.");
+ const result=await supabaseRequest("/rest/v1/rpc/deactivate_cafe_branch",{method:"POST",body:JSON.stringify({p_tenant_id:tenantId,p_branch_id:branchId})});
+ if(result.error) {
+  const message=result.error.includes("active_table_session")?"This branch has an active table session. Wait for it to expire before deactivation.":result.error.includes("permission_denied")?"Workspace access denied.":"Could not deactivate branch.";
+  redirect("/app/branches?error="+encodeURIComponent(message));
+ }
  revalidatePath("/app/branches"); revalidatePath("/app/floor-plan"); redirect("/app/branches?deactivated=1");
 }
