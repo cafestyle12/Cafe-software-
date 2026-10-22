@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { inviteMemberAction, revokeInviteAction, setMemberStatusAction } from "@/app/actions/auth";
+import { revokeInviteAction, setMemberStatusAction } from "@/app/actions/auth";
 import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
 
 type Props = { searchParams: Promise<{ tenant?: string; error?: string; notice?: string }> };
@@ -91,20 +91,8 @@ export default async function MembersPage({ searchParams }: Props) {
       </section>
 
       {canManageMembers && <section className="mb-8 rounded-2xl border border-[var(--border)] bg-white p-6">
-        <h2 className="text-lg font-semibold">Invite a team member</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">An email invitation is sent through Supabase Auth. Invite links are tied to the intended email address and expire after seven days.</p>
-        {availableRoles.length === 0 ? <p className="mt-4 text-sm text-[var(--muted)]">No assignable roles are available for your account.</p> : <form action={inviteMemberAction} className="mt-5 grid gap-4 md:grid-cols-[1.4fr_1fr_auto]">
-          <input type="hidden" name="tenant_id" value={tenantId} />
-          <label className="block text-sm font-medium">Team member email
-            <input name="email" type="email" required maxLength={320} className="mt-2 w-full rounded-xl border border-[var(--border)] px-4 py-3 outline-none focus:border-[var(--accent)]" placeholder="person@example.com" />
-          </label>
-          <label className="block text-sm font-medium">Role
-            <select name="role_id" required className="mt-2 w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 outline-none focus:border-[var(--accent)]">
-              {availableRoles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
-            </select>
-          </label>
-          <button className="self-end rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">Send invite</button>
-        </form>}
+        <h2 className="text-lg font-semibold">Team member access</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Email-based invitations are disabled in the Restaurant ID authentication design. Do not send invites that cannot be used to sign in. The platform administrator currently provisions restaurant owner accounts; member credential provisioning requires a separate reviewed flow.</p>
       </section>}
 
       <section className="mb-8">
