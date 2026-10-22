@@ -161,3 +161,27 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - **Still incomplete / not verified:** QR image/SVG/PNG generation and decoding, batch export/print layouts, full restaurant profile UI, zone edit/deactivate and table deactivation dependency guards, QR/session rate limiting, comprehensive tenant-isolation tests, lint/typecheck/build and browser E2E for the latest commit. Session initialization concurrency and revoke races need tests. Do not call Phase 03 complete yet.
 - Vercel status check reported deployment rate-limited with a 24-hour retry; no successful Phase 03 deployment URL is verified. CI workflow was updated to include `phase-03/**`; latest run has not yet been observed.
 - Phase 04 Menu and Product Catalog has not started.
+
+
+## Phase 03 implementation update — 2026-10-22 (supersedes earlier Phase 03 status above)
+
+Implemented on `phase-03/branches-tables-floor-qr` only; Phase 04 has not started and no production merge/deployment was performed.
+
+- Restaurant profile fields and editor: display name, contact phone/email (contact-only, not login), address, default timezone.
+- Branch create/edit/deactivate with timezone/address/contact fields; atomic branch deactivation refuses while active table sessions exist and revokes QR credentials before marking related operational records inactive.
+- Seating zone create/rename/deactivate; active tables must be moved or deactivated before a zone can be deactivated.
+- Table create/edit/deactivate, capacity, zone, shape, width/height, position and rotation; table deactivation checks active sessions and atomically revokes related QR credentials.
+- Interactive drag/keyboard move, rotate, resize, save/discard and optimistic layout version checks.
+- Per-table QR issue/revoke; QR secrets are random, only SHA-256 hashes are stored, raw token is shown only on successful issue, and revoke atomically revokes sessions created from that QR.
+- Local QR encoder (no QR-token transmission to an external QR-image service), SVG download and print card; atomic batch issue for up to 50 tables at a time, individual SVG downloads and multi-card print sheet. One-active-QR-per-table is enforced by a partial unique index.
+- Public QR landing resolves only public-safe restaurant/branch/table fields. Session initialization uses an opaque random token, hashed-at-rest storage, four-hour expiry, idempotency key, serialized creation and a 25-active-session-per-table cap. Ordering/payment remain out of scope.
+- Restaurant ID input remains custom and normalized: 3–32 characters; letters, digits, hyphen, underscore; first character must be a letter or digit; no spaces. Unique tenant mapping remains enforced.
+- Additive Supabase migrations applied: `phase_03_safe_lifecycle_rpcs`, `phase_03_batch_qr_issuance`, `phase_03_qr_session_abuse_guard`, `phase_03_single_active_qr`, `phase_03_floor_plan_resize`, and `phase_03_atomic_qr_revocation`, in addition to the original Phase 03 migrations.
+- Database inspection confirms RLS and FORCE RLS are enabled for all five operational tables; anonymous direct table SELECT is denied, and authenticated direct access to private `table_sessions` is denied. Public QR/session access is only through narrow RPCs.
+
+### Acceptance status (do not overstate)
+
+- The branch has repeated CI runs while changes were being iterated. A previous commit passed CI after the QR encoder namespace/import corrections, but later floor-plan resize and lifecycle changes then required additional fixes. **The latest branch-head CI run must be green before acceptance.**
+- Vercel's check has reported `build-rate-limit`; latest Phase 03 code is not confirmed deployed to Preview. Do not claim browser end-to-end verification or successful latest deployment until a fresh Preview is available and tested.
+- Live tenant-isolation and authenticated browser workflows (restaurant profile, branch/zone/table lifecycle, QR scan/session, revoke/regenerate, batch printing) still require end-to-end verification with an authorized Preview account.
+- Phase 03 is not accepted until latest CI passes and Preview/browser checks are completed. Phase 04 remains unstarted; production merge/deployment remains unauthorized.
