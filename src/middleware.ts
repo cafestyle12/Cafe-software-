@@ -3,34 +3,49 @@ import { NextRequest, NextResponse } from "next/server";
 const ACCESS_COOKIE = "cafeos_access_token";
 const REFRESH_COOKIE = "cafeos_refresh_token";
 
-type AuthUser = { id?: string; app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string } };
+type AuthUser = { id?: string; app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string; session_version?: string } };
+type RestaurantAccount = { status: string; must_change_password: boolean; session_version: string };
 
-function gate(request: NextRequest, response: NextResponse, user: AuthUser) {
+function clearSessionRedirect(request: NextRequest, target: string) {
+  const next = NextResponse.redirect(new URL(target, request.url));
+  const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
+  next.cookies.set(ACCESS_COOKIE, "", { ...options, maxAge: 0 });
+  next.cookies.set(REFRESH_COOKIE, "", { ...options, maxAge: 0 });
+  return next;
+}
+
+async function gate(request: NextRequest, response: NextResponse, user: AuthUser, url: string) {
   const path = request.nextUrl.pathname;
-  const isLogin = path === "/login";
-  const isPlatformAdmin = path.startsWith("/platform-admin");
-  if (isPlatformAdmin) return response;
+  if (path.startsWith("/platform-admin")) return response;
+  if (user.app_metadata?.cafeos_account_type !== "restaurant_owner" || !user.id) {
+    return path === "/login" ? clearSessionRedirect(request, "/login?notice=Please%20sign%20in%20using%20your%20Restaurant%20ID") : clearSessionRedirect(request, "/login?notice=Please%20sign%20in%20using%20your%20Restaurant%20ID");
+  }
 
-  const clear = (target: string) => {
-    const next = NextResponse.redirect(new URL(target, request.url));
-    next.cookies.set(ACCESS_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
-    next.cookies.set(REFRESH_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
-    return next;
-  };
-
-  if (user.app_metadata?.cafeos_account_type !== "restaurant_owner") {
-    return isLogin ? response : clear("/login?notice=Please%20sign%20in%20using%20your%20Restaurant%20ID");
+  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) return clearSessionRedirect(request, "/login?error=Restaurant%20authentication%20setup%20is%20incomplete");
+  try {
+    const lookup = await fetch(
+      `${url}/rest/v1/restaurant_auth_accounts?select=status,must_change_password,session_version&auth_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+      { headers: { apikey: secret, Authorization: `Bearer ${secret}` }, cache: "no-store" },
+    );
+    if (!lookup.ok) return clearSessionRedirect(request, "/login?error=Restaurant%20account%20could%20not%20be%20verified");
+    const accounts = await lookup.json() as RestaurantAccount[];
+    const account = accounts[0];
+    if (!account) return clearSessionRedirect(request, "/login?error=Restaurant%20account%20is%20not%20provisioned");
+    if (account.status !== "active" || user.app_metadata.account_status !== "active") {
+      return clearSessionRedirect(request, "/login?error=This%20restaurant%20account%20is%20suspended%20or%20deactivated");
+    }
+    if (account.session_version !== user.app_metadata.session_version) {
+      return clearSessionRedirect(request, "/login?notice=Your%20session%20was%20revoked.%20Sign%20in%20again");
+    }
+    if (account.must_change_password || user.app_metadata.must_change_password === true) {
+      if (!path.startsWith("/change-password")) return NextResponse.redirect(new URL("/change-password?first=1", request.url));
+    }
+    return response;
+  } catch {
+    // Fail closed if the authoritative restaurant account cannot be checked.
+    return clearSessionRedirect(request, "/login?error=Restaurant%20account%20could%20not%20be%20verified");
   }
-  if (user.app_metadata.account_status && user.app_metadata.account_status !== "active") {
-    return clear("/login?error=This%20restaurant%20account%20is%20suspended%20or%20deactivated");
-  }
-  if (user.app_metadata.must_change_password === true && !path.startsWith("/change-password")) {
-    return NextResponse.redirect(new URL("/change-password?first=1", request.url));
-  }
-  if (user.app_metadata.must_change_password !== true && path.startsWith("/change-password?first=1")) {
-    return NextResponse.redirect(new URL("/app", request.url));
-  }
-  return response;
 }
 
 export async function middleware(request: NextRequest) {
@@ -48,10 +63,7 @@ export async function middleware(request: NextRequest) {
         headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
         cache: "no-store",
       });
-      if (check.ok) {
-        const user = await check.json() as AuthUser;
-        return gate(request, response, user);
-      }
+      if (check.ok) return await gate(request, response, await check.json() as AuthUser, url);
       if (!refreshToken || (check.status !== 401 && check.status !== 403)) return response;
     }
     if (!refreshToken) return response;
@@ -62,19 +74,15 @@ export async function middleware(request: NextRequest) {
       body: JSON.stringify({ refresh_token: refreshToken }),
       cache: "no-store",
     });
-    if (!refreshed.ok) {
-      response.cookies.set(ACCESS_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
-      response.cookies.set(REFRESH_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
-      return response;
-    }
+    if (!refreshed.ok) return clearSessionRedirect(request, "/login?notice=Your%20session%20expired.%20Sign%20in%20again");
 
     const session = await refreshed.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
-    if (!session.access_token || !session.refresh_token) return response;
+    if (!session.access_token || !session.refresh_token) return clearSessionRedirect(request, "/login?notice=Your%20session%20expired.%20Sign%20in%20again");
     const userResponse = await fetch(`${url}/auth/v1/user`, {
       headers: { apikey: key, Authorization: `Bearer ${session.access_token}` },
       cache: "no-store",
     });
-    if (!userResponse.ok) return response;
+    if (!userResponse.ok) return clearSessionRedirect(request, "/login?notice=Your%20session%20expired.%20Sign%20in%20again");
     const user = await userResponse.json() as AuthUser;
 
     request.cookies.set(ACCESS_COOKIE, session.access_token);
@@ -84,10 +92,9 @@ export async function middleware(request: NextRequest) {
     response.cookies.set(ACCESS_COOKIE, session.access_token, { ...cookieOptions, maxAge: Math.max(60, session.expires_in ?? 3600) });
     response.cookies.set(REFRESH_COOKIE, session.refresh_token, { ...cookieOptions, maxAge: 60 * 60 * 24 * 365 });
     response.headers.set("Cache-Control", "private, no-store");
-    return gate(request, response, user);
+    return await gate(request, response, user, url);
   } catch {
-    // A transient auth network failure must not erase a valid browser session.
-    return response;
+    return clearSessionRedirect(request, "/login?error=Restaurant%20account%20could%20not%20be%20verified");
   }
 }
 
