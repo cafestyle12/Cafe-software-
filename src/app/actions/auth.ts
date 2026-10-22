@@ -74,8 +74,8 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
   const firstLogin = appMetadata.must_change_password === true || account.must_change_password;
   const passwordValidation = validateRestaurantPasswordChange(currentPassword, password, confirm, !firstLogin);
   if (passwordValidation) {
-    const destination = firstLogin ? "/change-password?first=1" : "/account-settings";
-    redirect(`${destination}&error=Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol%20and%20a%20different%20password`);
+    const error = "Use%20a%20matching%20password%20of%2012%20or%20more%20characters%20with%20uppercase%2C%20lowercase%2C%20number%20and%20symbol%20and%20a%20different%20password";
+    redirect(firstLogin ? `/change-password?first=1&error=${error}` : `/account-settings?error=${error}`);
   }
 
   if (!firstLogin) {
