@@ -54,7 +54,7 @@ Do not manually edit auth.users or store passwords in public tables.
 
 ## First-login JWT guard migration — 2026-10-22
 
-- Applied additive migration `20261022150000_phase_02_auth_jwt_first_login_guard`.
-- It updates `private.is_tenant_member(uuid)` to deny tenant membership when the signed JWT `app_metadata.must_change_password` claim is true, as well as when the mapped restaurant account is inactive or still requires password change. Existing tenant status and active membership predicates remain required.
+- Applied additive migration `20261022151000_phase_02_auth_first_login_claim_guard`.
+- It updates `private.is_tenant_member(uuid)` to deny tenant membership when the signed JWT `app_metadata.must_change_password` claim is true, while preserving the required restaurant-owner claim, active tenant/membership/mapping checks, and `session_version` match.
 - Reasserts execute grants: `private.is_tenant_member(uuid)` is not executable by public/anon and remains executable by authenticated users for policy evaluation.
 - The migration is reversible by restoring the prior function definition from migration `20261022091308_phase_02_restaurant_id_auth`; no table or tenant data is dropped. Avoid rollback while restaurant credential accounts depend on the stricter guard without first reviewing their state.
