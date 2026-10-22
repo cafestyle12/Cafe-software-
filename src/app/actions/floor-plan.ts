@@ -84,6 +84,20 @@ export async function deactivateCafeTableAction(formData: FormData) {
   revalidatePath("/app/floor-plan"); redirect("/app/floor-plan?tableDeactivated=1");
 }
 
+export async function updateSeatingZoneAction(formData: FormData) {
+  const user=await requireOwnerSession();
+  const tenantId=String(formData.get("tenant_id")??"");
+  const branchId=String(formData.get("branch_id")??"");
+  const zoneId=String(formData.get("zone_id")??"");
+  const name=String(formData.get("name")??"").trim();
+  if(!tenantId||!branchId||!zoneId||!validLabel(name,80)) redirect("/app/floor-plan?error=Enter%20a%20valid%20zone%20name");
+  const membership=await supabaseRequest<Array<{id:string}>>(`/rest/v1/memberships?select=id&tenant_id=eq.${encodeURIComponent(tenantId)}&user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&limit=1`);
+  if(membership.error||!membership.data?.length) redirect("/app/floor-plan?error=Workspace%20access%20denied");
+  const result=await supabaseRequest(`/rest/v1/seating_zones?id=eq.${encodeURIComponent(zoneId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({name,updated_at:new Date().toISOString()})});
+  if(result.error) redirect("/app/floor-plan?error="+encodeURIComponent(result.error.includes("unique")?"That zone name already exists.":"Could not update zone."));
+  revalidatePath("/app/floor-plan"); redirect("/app/floor-plan?zoneUpdated=1");
+}
+
 export async function deactivateSeatingZoneAction(formData: FormData) {
   await requireOwnerSession();
   const tenantId=String(formData.get("tenant_id")??"");
