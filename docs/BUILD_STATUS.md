@@ -133,3 +133,12 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Phase 03 has not started.
 
 - Additional database security checks: migration 20261022094252 revoked direct tenant INSERT and gated same-tenant profile visibility; migration 20261022094402 removed TRUNCATE/REFERENCES/TRIGGER from browser roles and removed all anon table grants. Post-migration privilege queries confirmed no browser-role TRUNCATE grants and no browser-role tenant INSERT.
+
+
+## Current status — 2026-10-22 09:47 UTC
+- Branch-head CI run #431 for commit b189c1394cc2ec17189a3315c711a67ac6fca1c8 completed successfully: install, lint, typecheck, unit tests and production build all passed. Run: https://github.com/cafestyle12/Cafe-software-/actions/runs/39758002003.
+- Supabase migration history is aligned with checked-in migration versions through 20261022094402. The connected project has the restaurant mapping, DB rate limiter, admin-only provisioning/status RPCs, owner-only RLS/session-version gates, direct tenant INSERT revoked, and RLS-bypassing table privileges revoked.
+- Rollback-only SQL tests passed for five attempts allowed/sixth blocked; first-login owner denied; active mapped owner allowed; stale session-version denied; suspended owner and tenant denied; legacy email-only session denied; colleague-profile sharing follows the owner gate. All test tenant/mapping changes were rolled back.
+- Current latest READY Vercel Preview is https://cafe-software-95s0eecl9-edityyp.vercel.app, deployed at commit 6a42f35a99e13c4dd953d98cd061a5dfe4056a2d, which is older than the current branch head. The Vercel deployment API returned 403 for a new Preview deployment. Do not claim current code is deployed.
+- The current Preview UI reports missing server-only Supabase secret/platform admin token. Configure SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY and CAFEOS_PLATFORM_ADMIN_TOKEN in Preview, then obtain permission to deploy a Preview before attempting live provisioning. Do not configure Production or merge without authorization.
+- Supabase leaked-password protection remains disabled and must be enabled before production. The internal .invalid alias and full Admin API flow remain unverified because the server secret is not configured/available to this run.
