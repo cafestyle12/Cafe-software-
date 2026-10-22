@@ -30,14 +30,14 @@ Last updated: 2026-10-22
 - Transactional SQL security test passed against the connected project: tenant A/B isolation, cross-tenant branch insert denial, explicit branch-scope enforcement, owner-membership protection, manager role-assignment boundary, and prevention of manager-created owner invitations. All fixture rows were rolled back.
 
 ## Verification still required before Phase 02 acceptance
-- Latest recorded CI run #47 passed on commit 9ba1e7a8b51e013fc3d4c4d8fecd889cfd2e9077. Subsequent changes are SQL migration/test and documentation updates; TypeScript runtime code is unchanged since that passing run.
-- Configure Supabase Auth Site URL and allowed redirect URL for `https://cafe-software-git-phase-02-auth-multitenancy-edityyp.vercel.app`, then complete end-to-end tests with confirmation and recovery emails.
+- Latest CI run #72 passed on commit 0c8530b902f41715ba6a0be5ab6707f4d309efbc: install, lint, typecheck, unit tests, and production build all passed. Phase 02 login UI and confirmation callback compatibility changes are included.
+- Supabase Auth Site URL and allowed redirect URL match `https://cafe-software-git-phase-02-auth-multitenancy-edityyp.vercel.app` and `/auth/confirm`. Recovery email end-to-end remains BLOCKED: app currently shows `Could not send the recovery email. Try again later`; Auth logs show `/recover` requests but earlier `/verify` attempts failed with `403: Email link is invalid or has expired`. The recovery template and actual SMTP/email delivery still require a verified end-to-end run.
 - Transactional RLS tests passed using three simulated authenticated identities. Full browser/session integration and branch-scoped membership tests remain open.
 - Invitation delivery/acceptance and member disable/revoke workflows are implemented but still require `SUPABASE_SECRET_KEY` (or `SUPABASE_SERVICE_ROLE_KEY`) configured as a server-only Vercel Preview environment variable and end-to-end tests with a test inbox.
 - Session revocation, role-boundary tests, and production abuse/rate-limit review remain open.
 
 ## Browser and deployment verification
-- TinyFish public smoke test passed on the branch alias for `/`, `/login`, `/signup`, `/forgot-password`, `/auth/confirm`, `/app`, `/onboarding`, and `/app/members`; protected routes correctly redirected unauthenticated visitors to `/login`, the Supabase configuration warning disappeared, and no runtime errors were observed.
+- TinyFish public smoke test passed on the branch alias for `/`, `/login`, `/signup`, `/forgot-password`, `/auth/confirm`, `/app`, `/onboarding`, and `/app/members`; protected routes correctly redirected unauthenticated visitors to `/login`. The animated split-layout login redesign is live on the branch preview, with orbital café modules, large circular centerpiece, entrance/bounce/float/rotate/pulse transitions, responsive CSS breakpoints, and reduced-motion support. Recovery request still displays an error and is not accepted.
 - Preview redeployment is READY on Vercel after adding the three branch-scoped public environment variables. Latest preview deployment uses the Phase 02 branch commit.
 - Project-level Vercel SSO protection was disabled to make the preview publicly testable; production has not been deployed.
 
