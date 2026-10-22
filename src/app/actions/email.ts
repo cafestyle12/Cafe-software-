@@ -21,13 +21,16 @@ export async function resendConfirmationAction(formData: FormData) {
   }
 
   const query = new URLSearchParams({
-    type: "signup",
     redirect_to: `${baseUrl}/auth/confirm`,
   });
   const response = await fetch(`${url}/auth/v1/resend?${query.toString()}`, {
     method: "POST",
     headers: { apikey: key, "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${baseUrl}/auth/confirm` },
+    }),
     cache: "no-store",
   });
 
