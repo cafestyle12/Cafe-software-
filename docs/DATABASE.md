@@ -50,3 +50,11 @@ Do not manually edit auth.users or store passwords in public tables.
 ## Owner-only RLS boundary — migration 20261022093023
 - The final RLS hardening migration requires both a verified Restaurant ID owner app_metadata claim and a matching active restaurant_auth_accounts row with must_change_password=false, plus active membership and active tenant status. This blocks legacy email-only sessions from reaching tenant data through direct Supabase REST calls.
 - A rollback-only SQL test passed for: first-login owner denied; mapped active owner allowed; suspended owner denied; suspended tenant denied. The test tenant and mapping were rolled back and no test tenant was retained.
+
+
+## First-login JWT guard migration — 2026-10-22
+
+- Applied additive migration `20261022150000_phase_02_auth_jwt_first_login_guard`.
+- It updates `private.is_tenant_member(uuid)` to deny tenant membership when the signed JWT `app_metadata.must_change_password` claim is true, as well as when the mapped restaurant account is inactive or still requires password change. Existing tenant status and active membership predicates remain required.
+- Reasserts execute grants: `private.is_tenant_member(uuid)` is not executable by public/anon and remains executable by authenticated users for policy evaluation.
+- The migration is reversible by restoring the prior function definition from migration `20261022091308_phase_02_restaurant_id_auth`; no table or tenant data is dropped. Avoid rollback while restaurant credential accounts depend on the stricter guard without first reviewing their state.
