@@ -30,7 +30,7 @@ export function PrivateQrCode({ value, label }: { value: string; label: string }
   }
 
   function print() {
-    const popup = window.open("", "_blank", "noopener,noreferrer,width=640,height=760");
+    const popup = window.open("", "_blank", "width=640,height=760");
     if (!popup) {
       window.alert("Allow pop-ups to print the QR card, or download the SVG instead.");
       return;
