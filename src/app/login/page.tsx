@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInAction } from "@/app/actions/auth";
 import { authConfigured, getCurrentUser } from "@/lib/supabase/auth";
+import { LoginShowcase } from "./login-showcase";
 
 type Props = { searchParams: Promise<{ error?: string; notice?: string }> };
 
@@ -21,14 +22,7 @@ export default async function LoginPage({ searchParams }: Props) {
           <div className="eyebrow"><span className="live-dot" /> THE OPERATING SYSTEM FOR HOSPITALITY</div>
           <h1>Every great café<br />starts with <span>one good<br className="desktop-break" /> move.</span></h1>
           <p>Orders, teams, branches and the little details that make guests come back—beautifully connected in one workspace.</p>
-          <div className="orbit-scene" aria-label="CafeOS connected workspace illustration">
-            <div className="orbit orbit-a" /><div className="orbit orbit-b" />
-            <div className="orbit-core"><span>☕</span><b>CafeOS</b><small>ONE CONNECTED CAFE</small></div>
-            <div className="orbit-node node-orders"><span>↗</span><b>Orders</b></div>
-            <div className="orbit-node node-team"><span>✳</span><b>Team</b></div>
-            <div className="orbit-node node-sales"><span>₹</span><b>Sales</b></div>
-            <div className="orbit-node node-menu"><span>▤</span><b>Menu</b></div>
-          </div>
+          <LoginShowcase />
           <div className="trust-row"><span>✦ Made for modern cafés</span><span>⌁ Built to scale</span><span>◉ Workspace-level security</span></div>
         </section>
         <section className="auth-card-wrap">
