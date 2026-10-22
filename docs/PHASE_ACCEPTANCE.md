@@ -136,3 +136,15 @@ Each phase must be independently verified before the next phase begins. Code pre
 - [ ] Verify preview URL and commit, then run the authenticated browser smoke test. Do not merge or deploy production without explicit authorization.
 
 Phase 03 remains NOT STARTED.
+
+
+## Final verification snapshot — 2026-10-22
+- [x] Latest branch-head CI run #209 passed install, lint, typecheck, unit tests and production build (commit cc7a4faea20a27a16cc526ee4b95357f46f58935).
+- [x] Additive Supabase migration applied and migration history verified; RLS and service-role grants checked.
+- [x] Database-backed rate-limit SQL test passed: five attempts allowed, sixth blocked; test transaction rolled back.
+- [ ] Latest branch head deployed to Vercel Preview — blocked by Vercel API 403 permission denied. Existing READY preview is an older commit.
+- [ ] Server-only Supabase secret and platform admin token configured in Preview — not confirmed.
+- [ ] Live Auth Admin API accepts the internal .invalid alias and end-to-end provisioning/login/password-reset/suspension tests pass — not yet testable without the secret and latest deployment.
+- [ ] Leaked-password protection enabled in Supabase Auth.
+
+Phase 02 remains IN PROGRESS, not accepted. Phase 03 has NOT STARTED.
