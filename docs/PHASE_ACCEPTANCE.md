@@ -153,3 +153,9 @@ Phase 02 remains IN PROGRESS, not accepted. Phase 03 has NOT STARTED.
 - [x] Audited the legacy create_tenant_with_branch RPC grants; revoked client execution in applied migration 20261022092809 and verified only service_role retains EXECUTE.
 
 - [x] RLS gate now requires Restaurant ID owner metadata and a matching active mapping row with first-login password change cleared; rollback-only SQL test passed for first-login, active, suspended-account and suspended-tenant cases.
+
+
+- [x] Added session_version UUID binding across Auth app_metadata, restaurant mapping, middleware and RLS. Provisioning/reset/status changes rotate the version; stale JWTs are denied.
+- [x] Rollback-only SQL test passed for first-login denial, active owner access, stale-version denial, suspended account and suspended tenant.
+- [ ] Configure missing Preview secrets and verify real Supabase Auth Admin API behavior with a controlled restaurant.
+- [ ] Deploy the latest branch head and run full live login/password/reset/suspend tests. Existing preview is an older commit.
