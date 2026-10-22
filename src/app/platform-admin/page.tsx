@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { loginPlatformAdminAction, logoutPlatformAdminAction, resetRestaurantPasswordAction, changeRestaurantStatusAction } from "@/app/actions/platform-admin";
+import { loginPlatformAdminAction, logoutPlatformAdminAction, changeRestaurantStatusAction } from "@/app/actions/platform-admin";
+import { ResetPasswordForm } from "./reset-password-form";
 import { adminFetch } from "@/lib/supabase/restaurant-auth";
 import { ProvisionRestaurantForm } from "./provision-form";
 
@@ -44,14 +45,6 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
 
   const list = await adminFetch<Account[]>("/rest/v1/restaurant_auth_accounts?select=tenant_id,restaurant_id,status,must_change_password,auth_user_id,created_at&order=created_at.desc");
   const accounts = list.data ?? [];
-  let resetCredentials: { restaurantId: string; password: string } | null = null;
-  if (params.reset === "1") {
-    try {
-      const raw = jar.get("cafeos_one_time_reset")?.value;
-      if (raw) resetCredentials = JSON.parse(raw) as { restaurantId: string; password: string };
-    } catch { resetCredentials = null; }
-  }
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-8 sm:px-10">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
@@ -87,7 +80,7 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
                   </div>
                   <p className="mt-2 text-sm text-[var(--muted)]">{account.must_change_password ? "Temporary password change required" : "Owner password set"}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <form action={resetRestaurantPasswordAction}><input type="hidden" name="restaurant_id" value={account.restaurant_id} /><button className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold">Reset password</button></form>
+                    <ResetPasswordForm restaurantId={account.restaurant_id} />
                     {account.status === "active" ? <form action={changeRestaurantStatusAction}><input type="hidden" name="restaurant_id" value={account.restaurant_id} /><input type="hidden" name="status" value="suspended" /><button className="rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold">Suspend</button></form> : <form action={changeRestaurantStatusAction}><input type="hidden" name="restaurant_id" value={account.restaurant_id} /><input type="hidden" name="status" value="active" /><button className="rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold">Reactivate</button></form>}
                     {account.status !== "deactivated" && <form action={changeRestaurantStatusAction}><input type="hidden" name="restaurant_id" value={account.restaurant_id} /><input type="hidden" name="status" value="deactivated" /><button className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold">Deactivate</button></form>}
                   </div>
