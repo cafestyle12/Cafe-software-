@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: cafeos-ci-${{ github.ref }}
@@ -24,8 +24,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install dependencies
+      - name: Resolve dependencies and create lockfile
         run: npm install
+      - name: Apply compatible dependency security fixes
+        run: npm audit fix
+      - name: Commit generated lockfile
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: commit npm lockfile [skip ci]"
+            git push
+          fi
+      - name: Verify clean lockfile installation
+        run: npm ci
       - name: Lint
         run: npm run lint
       - name: Type-check
