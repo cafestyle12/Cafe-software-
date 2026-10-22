@@ -65,3 +65,8 @@ Do not manually edit auth.users or store passwords in public tables.
 - admin_provision_restaurant now accepts p_session_version; admin_set_restaurant_status accepts a new p_session_version and rotates it atomically with tenant/account status. Password resets rotate the mapping version before changing the Auth password.
 - private.is_tenant_member requires a restaurant_owner claim, no must_change_password JWT claim, active tenant/membership/account, mapping must_change_password=false, and an exact match between JWT session_version and mapping session_version.
 - A rollback-only database test passed for first-login denial, active mapped owner access, stale session denial after version rotation, suspended account denial and suspended tenant denial.
+
+
+## Final table privilege hardening — migration 20261022094402
+- The audit found default browser-role grants included TRUNCATE, REFERENCES and TRIGGER on public tables. TRUNCATE bypasses RLS, so the new migration removes these privileges from PUBLIC/anon/authenticated across existing public tables and adjusts postgres default privileges for future tables. It also revokes all table privileges from anon.
+- Post-migration verification returned no TRUNCATE/REFERENCES/TRIGGER grants for anon or authenticated. The tenants table has INSERT only for postgres/service_role; no browser role can create a tenant directly.
