@@ -54,20 +54,24 @@ export async function createSeatingZoneAction(formData: FormData) {
   redirect("/app/floor-plan?zoneCreated=1");
 }
 
-export async function issueTableQrAction(formData: FormData) {
+export type IssueQrState = { error?: string; url?: string; tableLabel?: string };
+
+export async function issueTableQrAction(_previous: IssueQrState, formData: FormData): Promise<IssueQrState> {
   const user=await requireOwnerSession();
   const tenantId=String(formData.get("tenant_id")??"");
   const branchId=String(formData.get("branch_id")??"");
   const tableId=String(formData.get("table_id")??"");
-  if(!tenantId||!branchId||!tableId) redirect("/app/floor-plan?error=Missing%20table%20details");
+  if(!tenantId||!branchId||!tableId) return {error:"Missing table details."};
   const table=await supabaseRequest<Array<{id:string;label:string;status:string}>>(`/rest/v1/cafe_tables?select=id,label,status&id=eq.${encodeURIComponent(tableId)}&tenant_id=eq.${encodeURIComponent(tenantId)}&branch_id=eq.${encodeURIComponent(branchId)}&status=eq.active&limit=1`);
-  if(table.error||!table.data?.length) redirect("/app/floor-plan?error=Table%20access%20denied");
+  if(table.error||!table.data?.length) return {error:"Table access denied."};
+  const baseUrl=process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/,"");
+  if(!baseUrl) return {error:"NEXT_PUBLIC_SITE_URL is not configured. No QR credential was issued."};
   const token=randomBytes(32).toString("base64url");
   const tokenHash=createHash("sha256").update(token).digest("hex");
   const created=await supabaseRequest("/rest/v1/table_qr_credentials",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({tenant_id:tenantId,branch_id:branchId,table_id:tableId,token_hash:tokenHash,created_by:user.id,status:"active"})});
-  if(created.error) redirect("/app/floor-plan?error=Could%20not%20create%20QR.%20Check%20permissions%20and%20migration%20status.");
+  if(created.error) return {error:"Could not create QR. Check permissions and migration status."};
   revalidatePath("/app/floor-plan");
-  redirect("/app/floor-plan?qrIssued="+encodeURIComponent(token)+"&table="+encodeURIComponent(table.data[0].label));
+  return {url:baseUrl+"/t/"+token,tableLabel:table.data[0].label};
 }
 
 export async function revokeTableQrAction(formData: FormData) {
