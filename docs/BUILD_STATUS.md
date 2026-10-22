@@ -114,3 +114,9 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - CI, controlled provisioning, owner login, live Auth password update, suspension/revocation, and browser tenant-isolation acceptance must be reported only after the latest run/deployment and a safe controlled test are confirmed. The Vercel production deployment remains unauthorized.
 - Supabase global email-confirmation settings have not been changed; the new admin-provisioned identities use `email_confirm: true` and do not require verification emails. Do not state that project-wide email confirmation is disabled.
 - Known external blockers to resolve before production acceptance: confirm `SUPABASE_SECRET_KEY` (or legacy service-role key) and a random 32+ character `CAFEOS_PLATFORM_ADMIN_TOKEN` are set in Vercel Preview; verify Vercel Preview deployment permission; enable Supabase leaked-password protection; run controlled end-to-end tests. Phase 03 remains not started.
+
+
+## Session revocation verification — 2026-10-22
+- Applied migration version 20261022093302 (session_version column, updated provisioning/status RPC signatures and RLS session-version match) and version 20261022093414 (first-login JWT claim gate). The matching SQL files are checked into the branch. Migration 20261022093033 first-login guard is also represented in the repository so the local migration sequence matches remote history.
+- A rollback-only SQL test passed for first-login, active mapped owner, stale JWT session-version, suspended-account and suspended-tenant RLS cases.
+- The currently READY Vercel Preview renders the Restaurant ID login and restricted platform-admin page, but the UI explicitly reports missing server-only Supabase secret / platform-admin token. Its deployed commit is older than the current branch head; live provisioning/login is not yet accepted.
