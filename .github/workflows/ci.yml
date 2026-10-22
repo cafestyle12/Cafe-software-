@@ -2,7 +2,7 @@ name: CafeOS CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "phase-02/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
