@@ -64,31 +64,6 @@ export async function clearAuthSession() {
   jar.set(REFRESH_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
 }
 
-async function refreshSession(): Promise<AuthUser | null> {
-  const cfg = config();
-  const jar = await cookies();
-  const refreshToken = jar.get(REFRESH_COOKIE)?.value;
-  if (!cfg || !refreshToken) return null;
-
-  const response = await fetch(`${cfg.url}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    headers: authHeaders(cfg.key),
-    body: JSON.stringify({ refresh_token: refreshToken }),
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    await clearAuthSession();
-    return null;
-  }
-  const session = (await response.json()) as AuthSession;
-  if (!session.access_token || !session.refresh_token) {
-    await clearAuthSession();
-    return null;
-  }
-  await setAuthSession(session);
-  return session.user ?? getUserWithToken(session.access_token);
-}
-
 async function getUserWithToken(accessToken: string): Promise<AuthUser | null> {
   const cfg = config();
   if (!cfg) return null;
@@ -103,9 +78,7 @@ async function getUserWithToken(accessToken: string): Promise<AuthUser | null> {
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const accessToken = await currentAccessToken();
   if (!accessToken) return null;
-  const user = await getUserWithToken(accessToken);
-  if (user) return user;
-  return refreshSession();
+  return getUserWithToken(accessToken);
 }
 
 export async function supabaseRequest<T>(
