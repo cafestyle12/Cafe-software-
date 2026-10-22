@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { changeRestaurantPasswordAction } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/supabase/auth";
@@ -13,7 +14,7 @@ export default async function ChangePasswordPage({ searchParams }: { searchParam
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-6 py-12">
-      <a href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></a>
+      <Link href="/" className="text-xl font-bold">Cafe<span className="text-[var(--accent)]">OS</span></Link>
       <section className="mt-8 rounded-3xl border border-[var(--border)] bg-white p-7 shadow-sm sm:p-9">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">First sign-in security</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Set your own password</h1>
