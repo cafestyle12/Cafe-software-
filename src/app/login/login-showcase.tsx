@@ -18,7 +18,7 @@ export function LoginShowcase() {
     <section className="login-showcase" aria-label="CafeOS product highlights">
       <div className="showcase-slides">
         {slides.map((slide, index) => (
-          <article key={slide.tag} className={active === index ? "showcase-slide is-active" : "showcase-slide"} aria-hidden={active !== index}>
+          <article key={slide.tag} className="showcase-slide" data-active={active === index} aria-hidden={active !== index}>
             <div className="showcase-image" style={{ backgroundImage: 'linear-gradient(180deg,rgba(13,31,22,.04) 10%,rgba(13,31,22,.76) 100%),url("' + slide.image + '")' }} />
             <div className="showcase-copy">
               <span className="showcase-kicker"><i /> {slide.kicker}</span>
@@ -31,7 +31,7 @@ export function LoginShowcase() {
         ))}
       </div>
       <div className="showcase-controls" aria-label="Choose a feature slide">
-        <div className="showcase-dots">{slides.map((slide, index) => <button key={slide.tag} aria-label={"Show slide " + (index + 1)} aria-pressed={active === index} className={active === index ? "active" : ""} onClick={() => setActive(index)}><span /></button>)}</div>
+        <div className="showcase-dots">{slides.map((slide, index) => <button key={slide.tag} aria-label={"Show slide " + (index + 1)} aria-pressed={active === index} data-active={active === index} onClick={() => setActive(index)}><span /></button>)}</div>
         <span className="showcase-autoplay"><span className="autoplay-pulse" /> AUTO PLAY · 5 SEC</span>
       </div>
     </section>
