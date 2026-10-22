@@ -9,7 +9,11 @@ export default function HomePage() {
         <Link href="/" className="text-lg font-bold tracking-tight" aria-label="CafeOS home">
           Cafe<span className="text-[var(--accent)]">OS</span>
         </Link>
-        <span className="rounded-full border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--muted)]">Engineering preview</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden rounded-full border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--muted)] sm:inline">Engineering preview</span>
+          <Link href="/login" className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-semibold">Sign in</Link>
+          <Link href="/signup" className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-semibold text-white">Get started</Link>
+        </div>
       </header>
       <section className="grid flex-1 items-center gap-12 py-16 md:grid-cols-[1.2fr_0.8fr] md:py-24">
         <div>
@@ -19,15 +23,15 @@ export default function HomePage() {
             CafeOS is being built for Indian cafés: connected ordering, dependable operations, clear numbers, and workflows that account for real-world connectivity.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <span className="rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">Foundation phase</span>
+            <span className="rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">Phase 02 · Access foundation</span>
             <span className="rounded-lg border border-[var(--border)] px-4 py-3 text-sm font-semibold">India-first · INR</span>
           </div>
-          <p className="mt-4 max-w-xl text-xs leading-5 text-[var(--muted)]">Preview only. Ordering, payments, authentication, and live business data are not enabled in this phase.</p>
+          <p className="mt-4 max-w-xl text-xs leading-5 text-[var(--muted)]">Engineering preview. Authentication requires environment configuration and verified Supabase email settings. Ordering, payments, and live café operations are not enabled yet.</p>
         </div>
         <div className="rounded-3xl border border-[var(--border)] bg-white/70 p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex items-center justify-between">
             <div><p className="text-sm font-semibold">Product roadmap</p><p className="mt-1 text-xs text-[var(--muted)]">Capabilities under development</p></div>
-            <span className="rounded-full bg-[#edf2eb] px-3 py-1 text-xs font-semibold text-[var(--accent)]">Phase 01</span>
+            <span className="rounded-full bg-[#edf2eb] px-3 py-1 text-xs font-semibold text-[var(--accent)]">Phase 02</span>
           </div>
           <ul className="space-y-3">
             {plannedCapabilities.map((capability) => (
