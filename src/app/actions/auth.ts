@@ -2,7 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
-import { authApi, clearAuthAttempts, clearAuthSession, consumeAuthAttempt, setAuthSession, siteUrl } from "@/lib/supabase/auth";
+import { authApi, clearAuthAttempts, clearAuthSession, setAuthSession, siteUrl } from "@/lib/supabase/auth";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
