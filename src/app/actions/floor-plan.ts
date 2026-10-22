@@ -70,6 +70,34 @@ export async function createSeatingZoneAction(formData: FormData) {
   redirect("/app/floor-plan?zoneCreated=1");
 }
 
+export async function deactivateCafeTableAction(formData: FormData) {
+  await requireOwnerSession();
+  const tenantId=String(formData.get("tenant_id")??"");
+  const branchId=String(formData.get("branch_id")??"");
+  const tableId=String(formData.get("table_id")??"");
+  if(!tenantId||!branchId||!tableId) redirect("/app/floor-plan?error=Missing%20table%20details");
+  const result=await supabaseRequest("/rest/v1/rpc/deactivate_cafe_table",{method:"POST",body:JSON.stringify({p_tenant_id:tenantId,p_branch_id:branchId,p_table_id:tableId})});
+  if(result.error) {
+    const message=result.error.includes("active_table_session")?"This table has an active customer session. Wait for it to expire before deactivation.":result.error.includes("permission_denied")?"Workspace access denied.":"Could not deactivate table.";
+    redirect("/app/floor-plan?error="+encodeURIComponent(message));
+  }
+  revalidatePath("/app/floor-plan"); redirect("/app/floor-plan?tableDeactivated=1");
+}
+
+export async function deactivateSeatingZoneAction(formData: FormData) {
+  await requireOwnerSession();
+  const tenantId=String(formData.get("tenant_id")??"");
+  const branchId=String(formData.get("branch_id")??"");
+  const zoneId=String(formData.get("zone_id")??"");
+  if(!tenantId||!branchId||!zoneId) redirect("/app/floor-plan?error=Missing%20zone%20details");
+  const result=await supabaseRequest("/rest/v1/rpc/deactivate_seating_zone",{method:"POST",body:JSON.stringify({p_tenant_id:tenantId,p_branch_id:branchId,p_zone_id:zoneId})});
+  if(result.error) {
+    const message=result.error.includes("zone_has_active_tables")?"Move or deactivate active tables in this zone first.":result.error.includes("permission_denied")?"Workspace access denied.":"Could not deactivate zone.";
+    redirect("/app/floor-plan?error="+encodeURIComponent(message));
+  }
+  revalidatePath("/app/floor-plan"); redirect("/app/floor-plan?zoneDeactivated=1");
+}
+
 export type IssueQrState = { error?: string; url?: string; tableLabel?: string };
 
 export async function issueTableQrAction(_previous: IssueQrState, formData: FormData): Promise<IssueQrState> {
