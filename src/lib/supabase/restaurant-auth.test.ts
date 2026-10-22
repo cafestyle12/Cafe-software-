@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId } from "./restaurant-auth";
+import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, normalizeRestaurantId } from "../restaurant-credentials";
 
 describe("restaurant credential generation", () => {
   it("normalizes Restaurant IDs consistently", () => {
