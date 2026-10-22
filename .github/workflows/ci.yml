@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: cafeos-ci-${{ github.ref }}
+  group: cafeos-ci-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -26,8 +26,6 @@ jobs:
           node-version: 20
       - name: Resolve dependencies and create lockfile
         run: npm install
-      - name: Record dependency audit
-        run: timeout 60s npm audit --json > npm-audit.json || true
       - name: Commit generated lockfile
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
