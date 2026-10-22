@@ -35,9 +35,10 @@ create table if not exists public.seating_zones (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (tenant_id, branch_id, id),
-  unique (tenant_id, branch_id, lower(name)),
   foreign key (tenant_id, branch_id) references public.branches(tenant_id, id) on delete restrict
 );
+
+create unique index if not exists seating_zones_name_unique on public.seating_zones(tenant_id, branch_id, lower(trim(name)));
 
 create table if not exists public.cafe_tables (
   id uuid primary key default gen_random_uuid(),
@@ -56,10 +57,10 @@ create table if not exists public.cafe_tables (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (tenant_id, branch_id, id),
-  unique (tenant_id, branch_id, lower(label)),
   foreign key (tenant_id, branch_id) references public.branches(tenant_id, id) on delete restrict,
   foreign key (tenant_id, branch_id, zone_id) references public.seating_zones(tenant_id, branch_id, id) on delete restrict
 );
+create unique index if not exists cafe_tables_label_unique on public.cafe_tables(tenant_id, branch_id, lower(trim(label)));
 create index if not exists cafe_tables_branch_status_idx on public.cafe_tables(tenant_id, branch_id, status);
 create index if not exists seating_zones_branch_status_idx on public.seating_zones(tenant_id, branch_id, status);
 
