@@ -6,7 +6,8 @@ Last updated: 2026-10-22
 - Phase 00 — Complete.
 - Phase 01 — Complete. Engineering foundation and CI acceptance checks passed.
 - Phase 02 — In progress. Authentication routes, workspace onboarding, tenant/branch schema, permission model, RLS, invitation acceptance, member disable/revoke actions, and audit foundation are implemented; CI run #47 passed (install, lint, typecheck, unit tests, production build); transactional RLS negative tests also passed. TinyFish browser smoke test passed on the public preview for landing, auth pages, and unauthenticated protected-route redirects. Real email-flow tests and session-revocation checks remain open.
-- Phases 03–16 — Not started.
+- Phase 03 — In progress; do not treat as complete until the acceptance gate in the Phase 03 section below passes.
+- Phases 04–16 — Not started.
 
 ## Verified environment facts
 - GitHub repository: cafestyle12/Cafe-software-; public; default branch main.
@@ -151,3 +152,12 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Added authenticated workspace pages for branch creation and basic table/zone management; QR credential issuance stores a SHA-256 hash and shows the raw token once without putting it into the admin URL. Public table route returns only restaurant/branch/table display data.
 - Changed platform-admin Restaurant ID input to accept custom IDs: 3–32 characters, letters/numbers/hyphens/underscores, starting with a letter or number; normalized to uppercase and uniqueness enforced by the existing mapping plus a new tenant profile index.
 - NOT COMPLETE: no automated CI result has yet been verified for the Phase 03 branch; interactive drag/resize/rotate floor-plan editing, layout version-conflict action, table/branch edit/deactivate flows, QR artwork/download/print/batch export, and idempotent customer table-session initialization remain to implement. Phase 03 acceptance gate remains open. Phase 04 has not started.
+
+
+## Phase 03 current implementation record — 2026-10-22
+- Work is isolated on `phase-03/branches-tables-floor-qr`. Phase 02 Restaurant ID + password authentication was not intentionally redesigned. The platform-admin provisioning form now accepts user-chosen Restaurant IDs in the format documented by the validator.
+- Applied migrations in the connected Supabase project: `phase_03_branches_tables_floor_qr`, `phase_03_floor_plan_optimistic_save`, and `phase_03_table_session_initialization`. The QR resolution function was smoke-tested with an invalid token and returned a generic invalid result. RLS/FORCE RLS flags were inspected for the five new operational tables.
+- Implemented initial branch creation/edit/deactivation controls, table and zone creation, table editing, QR credential issue/revoke actions, public QR resolution page, interactive drag/keyboard floor-plan editor and optimistic layout-save RPC, plus a public session initialization route and session UI.
+- **Still incomplete / not verified:** QR image/SVG/PNG generation and decoding, batch export/print layouts, full restaurant profile UI, zone edit/deactivate and table deactivation dependency guards, QR/session rate limiting, comprehensive tenant-isolation tests, lint/typecheck/build and browser E2E for the latest commit. Session initialization concurrency and revoke races need tests. Do not call Phase 03 complete yet.
+- Vercel status check reported deployment rate-limited with a 24-hour retry; no successful Phase 03 deployment URL is verified. CI workflow was updated to include `phase-03/**`; latest run has not yet been observed.
+- Phase 04 Menu and Product Catalog has not started.
