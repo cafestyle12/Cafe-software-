@@ -113,7 +113,7 @@ export async function changeRestaurantPasswordAction(formData: FormData) {
 }
 
 export async function completeAuthSessionAction(accessToken: string, refreshToken: string, type: string, inviteId = "") {
-  const allowedTypes = new Set(["signup", "email", "recovery", "invite", "magiclink"]);
+  const allowedTypes = new Set(["invite"]);
   const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!cfgUrl || !cfgKey || !allowedTypes.has(type) || accessToken.length < 20 || refreshToken.length < 20) {
@@ -127,11 +127,11 @@ export async function completeAuthSessionAction(accessToken: string, refreshToke
   const user = await verified.json() as { id: string; email?: string; user_metadata?: { full_name?: string; name?: string } };
   if (type === "invite") await acceptInvitation(inviteId, user.id, user.email ?? "");
   await setAuthSession({ access_token: accessToken, refresh_token: refreshToken, expires_in: 3600, user });
-  redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : type === "signup" || type === "email" ? "/welcome" : "/onboarding");
+  redirect("/app?inviteAccepted=1");
 }
 
 export async function verifyConfirmationAction(tokenHash: string, type: string, inviteId = "") {
-  const allowedTypes = new Set(["signup", "email", "recovery", "invite", "magiclink"]);
+  const allowedTypes = new Set(["invite"]);
   const cfgUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const cfgKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!cfgUrl || !cfgKey || !allowedTypes.has(type) || tokenHash.length < 10 || tokenHash.length > 512) {
@@ -148,7 +148,7 @@ export async function verifyConfirmationAction(tokenHash: string, type: string, 
   if (session.access_token && session.refresh_token) {
     if (type === "invite") await acceptInvitation(inviteId, session.user?.id ?? "", session.user?.email ?? "");
     await setAuthSession({ access_token: session.access_token, refresh_token: session.refresh_token, expires_in: session.expires_in, user: session.user });
-    redirect(type === "recovery" ? "/reset-password" : type === "invite" ? "/app?inviteAccepted=1" : type === "signup" || type === "email" ? "/welcome" : "/onboarding");
+    redirect("/app?inviteAccepted=1");
   }
   redirect("/login?notice=Email%20confirmed.%20You%20can%20now%20sign%20in");
 }
