@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { generateInternalAuthEmail, generateRestaurantId, generateTemporaryPassword, isValidRestaurantId, normalizeRestaurantId, validateRestaurantPasswordChange } from "../restaurant-credentials";
 
-describe("restaurant credential generation", () => {\n  it("accepts custom human-readable Restaurant IDs and rejects unsafe formats", () => {\n    expect(isValidRestaurantId("YASHCAFE01")).toBe(true);\n    expect(isValidRestaurantId("CAFE-FIROZABAD-01")).toBe(true);\n    expect(isValidRestaurantId("coffee_house")).toBe(true);\n    expect(isValidRestaurantId("ab")).toBe(false);\n    expect(isValidRestaurantId("bad id")).toBe(false);\n    expect(isValidRestaurantId("../admin")).toBe(false);\n    expect(isValidRestaurantId("x".repeat(33))).toBe(false);\n  });
+describe("restaurant credential generation", () => {
+  it("accepts custom human-readable Restaurant IDs and rejects unsafe formats", () => {
+    expect(isValidRestaurantId("YASHCAFE01")).toBe(true);
+    expect(isValidRestaurantId("CAFE-FIROZABAD-01")).toBe(true);
+    expect(isValidRestaurantId("coffee_house")).toBe(true);
+    expect(isValidRestaurantId("ab")).toBe(false);
+    expect(isValidRestaurantId("bad id")).toBe(false);
+    expect(isValidRestaurantId("../admin")).toBe(false);
+    expect(isValidRestaurantId("x".repeat(33))).toBe(false);
+  });
   it("normalizes Restaurant IDs consistently", () => {
     expect(normalizeRestaurantId(" cafe-ab12-34cd56ef ")).toBe("CAFE-AB12-34CD56EF");
   });
