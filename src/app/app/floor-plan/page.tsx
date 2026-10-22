@@ -29,7 +29,7 @@ export default async function FloorPlanPage({searchParams}:{searchParams:Promise
   if(r.data?.[0]) tenants.push(r.data[0]);
  }
  const tenantId=params.tenant&&tenants.some(t=>t.id===params.tenant)?params.tenant:tenants[0]?.id;
- const branchesResult=tenantId?await supabaseRequest<Branch[]>(`/rest/v1/branches?select=id,tenant_id,name,timezone,status,branch_code,address&tenant_id=eq.${encodeURIComponent(tenantId)}&order=created_at.asc`):{data:[] as Branch[],error:null,status:200};
+ const branchesResult=tenantId?await supabaseRequest<Branch[]>(`/rest/v1/branches?select=id,tenant_id,name,timezone,status,branch_code,address&tenant_id=eq.${encodeURIComponent(tenantId)}&status=eq.active&order=created_at.asc`):{data:[] as Branch[],error:null,status:200};
  const branches=branchesResult.data??[];
  const branchId=params.branch&&branches.some(b=>b.id===params.branch)?params.branch:branches[0]?.id;
  const [zonesResult,tablesResult,qrResult]=tenantId&&branchId?await Promise.all([
