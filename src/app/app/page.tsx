@@ -12,6 +12,9 @@ type Props = { searchParams: Promise<{ created?: string; passwordUpdated?: strin
 export default async function AppHomePage({ searchParams }: Props) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const authMeta = (user as { app_metadata?: { cafeos_account_type?: string; must_change_password?: boolean; account_status?: string } }).app_metadata;
+  if (authMeta?.cafeos_account_type !== "restaurant_owner" || authMeta.account_status !== "active") redirect("/login?error=Restaurant%20account%20is%20unavailable");
+  if (authMeta.must_change_password) redirect("/change-password?first=1");
   const params = await searchParams;
   const membershipResult = await supabaseRequest<Membership[]>(
     `/rest/v1/memberships?select=id,tenant_id,status&user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&order=created_at.asc`,
@@ -37,12 +40,12 @@ export default async function AppHomePage({ searchParams }: Props) {
     branchesByTenant[tenant.id] = branchResult.data ?? [];
   }
 
-  const displayName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "CafeOS user";
+  const displayName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "Restaurant owner";
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-8 sm:px-10">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
         <Link href="/" className="text-xl font-bold tracking-tight">Cafe<span className="text-[var(--accent)]">OS</span></Link>
-        <div className="flex items-center gap-4"><span className="text-sm text-[var(--muted)]">{displayName}</span><form action={signOutAction}><button className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Sign out</button></form></div>
+        <div className="flex items-center gap-4"><span className="text-sm text-[var(--muted)]">{displayName}</span><Link href="/account-settings" className="text-sm font-semibold text-[var(--accent)]">Account settings</Link><form action={signOutAction}><button className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">Sign out</button></form></div>
       </header>
       <section className="py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Workspace overview</p>
@@ -54,7 +57,7 @@ export default async function AppHomePage({ searchParams }: Props) {
         {params.error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{params.error}</p>}
       </section>
       <section>
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-xl font-semibold">Your workspaces</h2><p className="mt-1 text-sm text-[var(--muted)]">Only workspaces where your membership is active are shown.</p></div><Link href="/onboarding" className="rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">Set up another café</Link></div>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-xl font-semibold">Your workspaces</h2><p className="mt-1 text-sm text-[var(--muted)]">Only workspaces where your membership is active are shown.</p></div></div>
         {tenants.length === 0 ? <div className="rounded-2xl border border-[var(--border)] p-6 text-sm text-[var(--muted)]">No workspace is currently visible to your account. Try refreshing or contact the workspace owner.</div> :
           <div className="grid gap-4 md:grid-cols-2">
             {tenants.map((tenant) => (
