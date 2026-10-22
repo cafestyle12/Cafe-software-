@@ -54,3 +54,12 @@ Last audited: 2026-10-22
 
 
 - Migration 20261022093023 further tightens private.is_tenant_member: a session must carry the restaurant_owner app_metadata claim and match an active mapping row with the first-login flag cleared. A transaction-only SQL test confirmed first-login, suspended-account, and suspended-tenant denials while an active mapped owner passed.
+
+
+## Restaurant ID auth hardening update — 2026-10-22
+
+- Supabase's supported password identity remains email/phone. Restaurant ID resolution is server-only and mapped to a cryptographically random, non-deliverable `.invalid` alias; no public request can select an arbitrary auth email or user UUID.
+- The new `private.is_tenant_member` definition now also denies data access when the verified JWT carries `app_metadata.must_change_password=true`, in addition to checking the account mapping and tenant/membership status. This protects direct PostgREST/RLS access if the Auth metadata and mapping update do not complete together.
+- Password change now requires the current/temporary password, rejects reuse, and keeps the Auth first-login flag set until the mapping update succeeds. The Auth metadata is then cleared; if that step fails, the mapping is re-locked and the JWT claim remains a deny condition.
+- Migration `20261022150000_phase_02_auth_jwt_first_login_guard` was applied additively to Supabase. It replaces only the private membership helper and reasserts restricted execute grants; it does not modify tenant records.
+- Live login/provisioning remains unverified until Vercel Preview has the server-only Supabase secret and platform-admin bootstrap token and a controlled test is run. Do not mark the authentication acceptance gate complete from static code review alone.
