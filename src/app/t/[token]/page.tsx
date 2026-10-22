@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { TableSessionInitializer } from "@/app/t/[token]/table-session-initializer";
 
 type PublicQrResult={restaurant_name:string|null;branch_name:string|null;table_label:string|null;table_capacity:number|null;session_status:string};
 export default async function PublicTablePage({params}:{params:Promise<{token:string}>}) {
