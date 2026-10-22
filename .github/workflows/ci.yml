@@ -27,7 +27,7 @@ jobs:
       - name: Resolve dependencies and create lockfile
         run: npm install
       - name: Record dependency audit
-        run: npm audit --json > npm-audit.json || true
+        run: timeout 60s npm audit --json > npm-audit.json || true
       - name: Commit generated lockfile
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
