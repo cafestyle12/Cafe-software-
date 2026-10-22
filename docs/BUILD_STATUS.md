@@ -63,3 +63,12 @@ Last updated: 2026-10-22
 
 ### Current phase gate
 Phase 00 documentation/environment inventory is substantially present; SMTP/provider inventory remains blocked by dashboard/provider visibility. Phase 01 scripts, lockfile, example env and CI exist; latest code still requires CI evidence. Phase 02 database/RLS work has prior positive evidence, but auth/email E2E, invitation server secret setup, real session tests and latest deployment verification remain open. Phase 02 is NOT accepted. Phase 03 has not been started.
+
+
+### Verification update after resend fix — 2026-10-22
+- GitHub Actions CI run #117 completed successfully on the resend-fix commit lineage: dependency install, ESLint, TypeScript type-check, Vitest, and production build all passed. The run is at https://github.com/cafestyle12/Cafe-software-/actions/runs/39735158907.
+- The latest resend request now sends `type=signup` in the Auth REST query string and `email` in the request body, matching the endpoint contract. This is code-level verification only; no new confirmation email was sent as part of this audit.
+- The current Vercel commit status is **failure** with the Vercel URL indicating `build-rate-limit`. Therefore the current preview may not contain the fix; latest deployment is not verified.
+- Current Supabase Security Advisor warning: leaked-password protection is disabled. Enable it in Supabase Auth password-security settings.
+- The Vercel deployment listing API returned 403 and no deployment was changed or forced. Production was not deployed.
+- Overall Phase 02 acceptance remains **blocked** on email provider/template configuration and real controlled-inbox E2E, current deployment availability, authenticated session/tenant checks, and server-only secret setup for invitation administration.
