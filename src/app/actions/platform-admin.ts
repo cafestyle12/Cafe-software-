@@ -78,8 +78,8 @@ export async function provisionRestaurantAction(_previous: ProvisionState, formD
     return { error: "Enter a restaurant name, first branch name, and owner name (2–120 characters each)." };
   }
 
-  if (!/^CAFE-[A-Z0-9]{4}-[A-Z0-9]{8}$/.test(restaurantId)) {
-    return { error: "Enter a Restaurant ID in the format CAFE-AB12-34CD56EF." };
+  if (!/^[A-Z0-9][A-Z0-9_-]{2,31}$/.test(restaurantId)) {
+    return { error: "Restaurant ID must be 3–32 letters, numbers, hyphens or underscores, starting with a letter or number." };
   }
   if (temporaryPassword.length < 12 || temporaryPassword.length > 128 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword) || !/[^A-Za-z0-9]/.test(temporaryPassword)) {
     return { error: "Initial password must be 12–128 characters and include uppercase, lowercase, number and symbol." };
