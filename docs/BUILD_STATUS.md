@@ -120,3 +120,14 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Applied migration version 20261022093302 (session_version column, updated provisioning/status RPC signatures and RLS session-version match) and version 20261022093414 (first-login JWT claim gate). The matching SQL files are checked into the branch. Migration 20261022093033 first-login guard is also represented in the repository so the local migration sequence matches remote history.
 - A rollback-only SQL test passed for first-login, active mapped owner, stale JWT session-version, suspended-account and suspended-tenant RLS cases.
 - The currently READY Vercel Preview renders the Restaurant ID login and restricted platform-admin page, but the UI explicitly reports missing server-only Supabase secret / platform-admin token. Its deployed commit is older than the current branch head; live provisioning/login is not yet accepted.
+
+
+## Final audit snapshot — 2026-10-22 09:45 UTC
+
+- Confirmed Supabase Auth's supported password identity is email/phone, not an arbitrary Restaurant ID. The chosen design maps Restaurant ID server-side to a random internal `.invalid` alias and uses Supabase's normal password grant. New provisioned users are marked confirmed via the Admin API; global email-confirmation configuration remains unchanged.
+- Applied first-login RLS guard to Supabase; live function inspection confirms it retains the restaurant-owner claim, active tenant/membership/mapping predicates, and `session_version` equality while also denying JWTs with `must_change_password=true`. Admin provisioning/status RPCs are restricted to `service_role`.
+- Code updates now rotate `session_version` during provisioning, administrator resets/status changes and owner password changes; middleware compares session JWT/current Auth metadata/session-version cookie. Password-change partial failures are designed to fail closed.
+- The latest CI result actually inspected was run #353 on commit `881aeba92f77b9c09a6032ee9274c35fac6c46b9`; type-check failed due to a duplicate `randomUUID` import, nullable Auth payload access, and an unused variable. Those defects were corrected in later commits, but this audit could not retrieve a newer push-triggered CI run; do not claim the current head passes CI until a new green run is visible.
+- Latest READY Vercel preview observed was commit `7bcbd2f2d35cb0260b373085dd7695267ef1dea6`, which is behind the current branch head. The latest commit's Vercel check reports a build-rate-limit failure. No production deployment or merge was performed.
+- Live provisioning/login and actual `.invalid` alias acceptance remain unverified because the server-only Supabase secret and platform-admin token are not confirmed configured, and the latest branch head is not deployed.
+- Phase 03 has not started.
