@@ -40,3 +40,21 @@ export async function deactivateBranchAction(formData:FormData) {
  }
  revalidatePath("/app/branches"); revalidatePath("/app/floor-plan"); redirect("/app/branches?deactivated=1");
 }
+
+export async function updateRestaurantProfileAction(formData:FormData) {
+ const user=await requireOwner();
+ const tenantId=String(formData.get("tenant_id")??"");
+ const name=String(formData.get("name")??"").trim();
+ const phone=String(formData.get("contact_phone")??"").trim();
+ const email=String(formData.get("contact_email")??"").trim().toLowerCase();
+ const city=String(formData.get("city")??"").trim();
+ const state=String(formData.get("state")??"").trim();
+ const pin=String(formData.get("pin_code")??"").trim();
+ const timezone=String(formData.get("default_timezone")??"Asia/Kolkata");
+ if(!tenantId||name.length<2||name.length>120||phone.length>32||email.length>254||(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))||city.length>100||state.length>100||(pin&&!/^[0-9A-Za-z -]{3,12}$/.test(pin))||!["Asia/Kolkata","Asia/Dubai","Europe/London","America/New_York"].includes(timezone)) redirect("/app/branches?error=Invalid%20restaurant%20profile");
+ const member=await supabaseRequest<Array<{id:string}>>(`/rest/v1/memberships?select=id&tenant_id=eq.${encodeURIComponent(tenantId)}&user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&limit=1`);
+ if(member.error||!member.data?.length) redirect("/app/branches?error=Workspace%20access%20denied");
+ const r=await supabaseRequest(`/rest/v1/tenants?id=eq.${encodeURIComponent(tenantId)}`,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({name,contact_phone:phone||null,contact_email:email||null,address:{city,state,pin_code:pin,country:"India"},default_timezone:timezone,updated_at:new Date().toISOString()})});
+ if(r.error) redirect("/app/branches?error=Could%20not%20update%20restaurant%20profile");
+ revalidatePath("/app"); revalidatePath("/app/branches"); redirect("/app/branches?profileUpdated=1");
+}
