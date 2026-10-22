@@ -171,3 +171,19 @@ Implementation is isolated on `phase-03/branches-tables-floor-qr`, based on the 
 - The existing project-level leaked-password protection warning remains from the Phase 02 Auth configuration and must be enabled in Supabase Auth settings before production.
 - Vercel's recent check has reported `build-rate-limit`, and the Vercel deployment-list API returned 403. The latest Phase 03 commit is not yet confirmed deployed to Preview. A fresh Preview deployment and browser E2E smoke test are still required; authenticated tenant-isolation and real QR scan/print workflows cannot be claimed verified until tested there.
 - Phase 03 is **not accepted** until the latest CI run passes and Preview/browser verification is completed. Phase 04 remains unstarted; production merge/deployment remains unauthorized.
+
+
+## Phase 03 continuation — 2026-10-22
+
+Additional hardening after the earlier status block:
+- Branch records now expose contact phone and free-form opening-hours notes in create/edit; restaurant and branch management screens remain email-free to preserve the Restaurant ID + password requirement.
+- Server-side timezone allow-list validation is applied on branch create/edit.
+- Floor-plan saves use the returned optimistic version for repeated saves without requiring a page reload.
+- Lifecycle RPCs now lock QR credentials before table rows, matching public session initialization order to avoid a QR/table lock-order deadlock.
+- Database trigger `validate_cafe_table_parent_status` validates active branch and active seating zone under row locks, preventing a concurrent table create/update from attaching an active table to a deactivated branch or zone.
+- Latest applied migration: `phase_03_parent_status_invariants` (migration file `20261023220000_phase_03_parent_status_invariants.sql`).
+
+### Current hard acceptance blockers
+- GitHub Actions #520 passed, but #521–#532 were still in progress when last checked; latest branch-head CI must finish green after the last commits.
+- Vercel deployment API returned HTTP 403: the connected Vercel identity does not have permission to create a Preview deployment for project `cafe-software`. No Phase 03 preview URL has been verified, so browser end-to-end acceptance cannot truthfully be marked complete. This requires the project owner to grant Preview deployment permission or to deploy this branch from an authorized Vercel account.
+- No production merge or production deployment has been performed.
