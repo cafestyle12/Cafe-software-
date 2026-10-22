@@ -161,3 +161,7 @@ Phase 02 remains IN PROGRESS, not accepted. Phase 03 has NOT STARTED.
 - [ ] Deploy the latest branch head and run full live login/password/reset/suspend tests. Existing preview is an older commit.
 
 - [x] Closed direct tenant table INSERT bypass and RLS-bypassing TRUNCATE/REFERENCES/TRIGGER grants; verified no anon/authenticated dangerous table privileges remain.
+
+
+## Acceptance decision — 2026-10-22
+**Phase 02 remains IN PROGRESS.** Code-level checks and database security migrations are in place, but the acceptance gate is not met until the latest branch is deployed to Preview, required server-only secrets are configured, the Supabase Admin API accepts the internal alias, and a controlled end-to-end provisioning/login/password-reset/suspension test passes. The current Preview is an older commit and deployment permission is denied. Phase 03 has NOT STARTED.
