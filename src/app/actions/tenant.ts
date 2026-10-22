@@ -2,13 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { getCurrentUser, supabaseRequest } from "@/lib/supabase/auth";
+import { normalizeTenantSlug } from "@/lib/tenant";
 
 function formValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
-}
-
-function toSlug(input: string) {
-  return input.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 
 export async function createTenantAction(formData: FormData) {
@@ -18,7 +15,7 @@ export async function createTenantAction(formData: FormData) {
   const name = formValue(formData, "tenant_name");
   const branchName = formValue(formData, "branch_name");
   const requestedSlug = formValue(formData, "tenant_slug");
-  const slug = toSlug(requestedSlug || name);
+  const slug = normalizeTenantSlug(requestedSlug || name);
 
   if (name.length < 2 || name.length > 120 || branchName.length < 2 || branchName.length > 120 || slug.length < 2) {
     redirect("/onboarding?error=Enter%20a%20valid%20workspace%20name%2C%20slug%2C%20and%20first%20branch");
