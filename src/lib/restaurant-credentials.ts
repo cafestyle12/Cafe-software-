@@ -4,7 +4,11 @@ export function normalizeRestaurantId(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "");
 }
 
-export function isValidRestaurantId(value: string) {\n  return /^[A-Z0-9][A-Z0-9_-]{2,31}$/.test(normalizeRestaurantId(value));\n}\n\nexport function generateRestaurantId() {
+export function isValidRestaurantId(value: string) {
+  return /^[A-Z0-9][A-Z0-9_-]{2,31}$/.test(normalizeRestaurantId(value));
+}
+
+export function generateRestaurantId() {
   const token = randomBytes(6).toString("hex").toUpperCase();
   return `CAFE-${token.slice(0, 4)}-${token.slice(4)}`;
 }
