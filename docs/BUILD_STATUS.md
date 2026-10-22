@@ -89,3 +89,11 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Vercel Preview requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY, CAFEOS_PLATFORM_ADMIN_TOKEN, and optionally CAFEOS_RATE_LIMIT_SECRET. The available Vercel environment listing returned 404 for project lookup, so these values are not confirmed configured. Never read or publish secret values in chat.
 - Latest CI was failing lint on three Next.js anchor errors; those were fixed and a new CI run was observed in progress. Update this note after that run completes; do not infer green CI.
 - Production deployment and merge to main remain unauthorized. Phase 03 is not started.
+
+
+## Verification update — 2026-10-22 09:20 UTC
+- GitHub Actions run #209 for commit cc7a4faea20a27a16cc526ee4b95357f46f58935 passed install, lint, typecheck, unit tests and production build: https://github.com/cafestyle12/Cafe-software-/actions/runs/39754502909.
+- Applied migration phase_02_restaurant_id_auth to Supabase project pryajliswtltcnbvcoiw; migration history reports version 20261022091308. New tables exist with RLS enabled; table grants are limited to service_role and SQL admin/rate-limit RPC execution is granted to service_role only. A transactional SQL check confirmed attempts 1–5 are allowed and attempt 6 is blocked; the test transaction was rolled back.
+- Supabase Security Advisor now reports two informational RLS-enabled/no-policy notices for the intentionally service-role-only mapping/rate-limit tables and one warning that leaked-password protection is disabled.
+- Vercel refused a Preview deployment with 403 permission denied. The latest READY preview is still commit 5d9b907c5f8f8b2ea9cb87fe4e22c02351aef6cd, not the current branch head. Do not claim the latest auth rebuild is deployed.
+- Live provisioning/login remains blocked until server-only Supabase secret and CAFEOS_PLATFORM_ADMIN_TOKEN are configured in Vercel Preview, and Vercel Preview deployment permission is restored. The .invalid identity alias must be confirmed accepted by the real Supabase Auth Admin API using a controlled test account.
