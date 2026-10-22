@@ -57,14 +57,7 @@ export default async function PlatformAdminPage({ searchParams }: { searchParams
         {params.error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{params.error}</p>}
         {params.notice && <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{params.notice}</p>}
         {!list.ok && <p role="alert" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Could not load restaurant accounts. Confirm the server-only Supabase secret and apply the Phase 02 restaurant-auth migration.</p>}
-        {resetCredentials && (
-          <section className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
-            <h2 className="font-semibold">One-time reset credentials</h2>
-            <p className="mt-2 text-sm">Restaurant ID: <code className="select-all">{resetCredentials.restaurantId}</code></p>
-            <p className="mt-2 text-sm">Temporary password: <code className="select-all break-all">{resetCredentials.password}</code></p>
-            <p className="mt-2 text-sm">Copy and provide these directly to the owner. This display expires automatically after 60 seconds.</p>
-          </section>
-        )}
+
       </section>
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <ProvisionRestaurantForm />
