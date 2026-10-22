@@ -79,3 +79,13 @@ Phase 00 documentation/environment inventory is substantially present; SMTP/prov
 - Extended the CafeOS refresh-token cookie lifetime to one year and kept automatic access-token refresh in middleware. A user remains signed in across normal browser visits until sign-out or until Supabase expires/revokes the underlying session; the app cannot override Supabase's project-level session lifetime policy.
 - Improved signup and recovery messages to point toward SMTP, sender verification, Auth logs, and provider rate limits when email delivery fails.
 - Email delivery still requires a real test inbox. Source HTML templates in `supabase/templates/` must be copied into Supabase Dashboard → Authentication → Email Templates; committing the templates alone does not change Supabase's live mail configuration.
+
+
+## Restaurant ID authentication rebuild — 2026-10-22
+- Architecture chosen after repository, Supabase schema, migration history, Auth logs and current Supabase password-auth documentation were inspected: Restaurant ID maps server-side to a random internal non-deliverable Auth email alias; Supabase Auth remains the password verifier and session issuer.
+- Branch code now includes a server-only platform admin console, one-time credential provisioning, Restaurant ID login, DB-backed hashed login throttling, first-login password-change UI, owner password change, admin reset/suspend/deactivate actions, middleware account gates, and RLS-helper enforcement.
+- Public signup, email recovery UI/action, resend-confirmation action and the email confirmation callback were removed. Email-based member invitations are disabled; existing invitation rows are retained.
+- Additive migration 20261022143000_phase_02_restaurant_id_auth.sql adds mapping/rate-limit tables and service-role-only RPCs. It must be applied and verified in the selected Supabase project before login/provisioning can work.
+- Vercel Preview requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY, CAFEOS_PLATFORM_ADMIN_TOKEN, and optionally CAFEOS_RATE_LIMIT_SECRET. The available Vercel environment listing returned 404 for project lookup, so these values are not confirmed configured. Never read or publish secret values in chat.
+- Latest CI was failing lint on three Next.js anchor errors; those were fixed and a new CI run was observed in progress. Update this note after that run completes; do not infer green CI.
+- Production deployment and merge to main remain unauthorized. Phase 03 is not started.
