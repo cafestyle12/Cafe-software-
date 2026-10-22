@@ -27,6 +27,7 @@ export default async function ChangePasswordPage({ searchParams }: { searchParam
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Your administrator-issued temporary password must be replaced before your restaurant workspace can be opened.</p>
         {params.error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{params.error}</p>}
         <form action={changeRestaurantPasswordAction} className="mt-6 space-y-4">
+          <input type="hidden" name="first_login" value="1" />
           <label className="block text-sm font-medium">Temporary password<PasswordField name="current_password" placeholder="Enter the password provided by CafeOS" autoComplete="current-password" /></label>
           <label className="block text-sm font-medium">New password<PasswordField name="password" placeholder="Create a strong new password" autoComplete="new-password" /></label>
           <label className="block text-sm font-medium">Confirm new password<PasswordField name="confirm_password" placeholder="Enter the new password again" autoComplete="new-password" /></label>
