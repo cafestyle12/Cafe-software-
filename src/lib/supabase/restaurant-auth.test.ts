@@ -13,6 +13,8 @@ describe("restaurant credential generation", () => {
   });
   it("normalizes Restaurant IDs consistently", () => {
     expect(normalizeRestaurantId(" cafe-ab12-34cd56ef ")).toBe("CAFE-AB12-34CD56EF");
+    expect(normalizeRestaurantId("bad id")).toBe("BAD ID");
+    expect(isValidRestaurantId(normalizeRestaurantId("bad id"))).toBe(false);
   });
 
   it("generates a unique-looking Restaurant ID in the enforced format", () => {
