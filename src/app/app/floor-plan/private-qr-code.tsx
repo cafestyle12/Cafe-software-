@@ -42,7 +42,7 @@ export function PrivateQrCode({ value, label }: { value: string; label: string }
   }
 
   return <div className="mt-3 rounded-xl border border-[var(--border)] bg-white p-3">
-    <div data-cafeos-qr-svg className="mx-auto max-w-[220px] bg-white p-2" dangerouslySetInnerHTML={{ __html: svg }} />
+    <div className="mx-auto max-w-[220px] bg-white p-2"><svg data-cafeos-qr-svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`QR code for ${label}`} className="h-auto w-full"><rect width={size} height={size} fill="#fff"/><path d={path.join("")} fill="#000"/></svg></div>
     <p className="mt-2 break-all text-center text-xs text-[var(--muted)]">QR for {label}</p>
     <div className="mt-3 flex flex-wrap justify-center gap-2">
       <button type="button" onClick={download} className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold">Download SVG</button>
