@@ -88,7 +88,7 @@ button, input, select, textarea { font: inherit; }
 @keyframes sparkle-turn { 0%,100% { transform: rotate(0) scale(1); } 50% { transform: rotate(22deg) scale(1.12); } }
 @media (max-width: 900px) { .auth-stage { padding-top: 22px; }.auth-layout { grid-template-columns: 1fr; gap: 28px; margin-top: 35px; }.auth-story { text-align: center; }.eyebrow { justify-content: center; }.auth-story h1 { font-size: clamp(44px,9vw,66px); }.auth-story > p { margin-left: auto; margin-right: auto; }.orbit-scene { width: min(320px,85vw); margin-top: 8px; }.trust-row { justify-content: center; }.auth-card-wrap { max-width: 500px; } }
 @media (max-width: 480px) { .auth-stage { padding: 20px 16px 30px; }.auth-layout { margin-top: 30px; gap: 22px; }.auth-story h1 { letter-spacing: -2.5px; margin-top: 20px; }.auth-story > p { font-size: 13px; }.orbit-scene { width: min(285px,83vw); }.orbit-node { width: 73px; height: 73px; }.orbit-node span { width: 27px; height: 27px; font-size: 16px; }.orbit-node b { font-size: 9px; }.trust-row { font-size: 9px; gap: 9px 12px; }.auth-card { border-radius: 24px; padding: 26px 22px; }.auth-card h2 { font-size: 36px; } }
-@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { .auth-orb-one,.auth-orb-two,.live-dot,.sparkle,.auth-footer span,.autoplay-pulse,.welcome-confetti i { animation: none !important; } html { scroll-behavior: auto !important; } }
 
 
 /* Phase 02 login showcase: editorial image slider instead of floating orbit elements */
@@ -143,4 +143,4 @@ button, input, select, textarea { font: inherit; }
 @keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0); opacity: 0; } 12% { opacity: .85; } 100% { transform: translateY(105vh) rotate(480deg); opacity: 0; } }
 @media(max-width:900px) { .login-showcase { margin: 24px auto 15px; max-width: 540px; }.showcase-slides { aspect-ratio: 1.45; min-height: 260px; } }
 @media(max-width:480px) { .showcase-slides { aspect-ratio: .98; min-height: 295px; border-radius: 21px; }.showcase-copy h2 { font-size: 34px; }.showcase-copy p { font-size: 11px; }.showcase-copy { bottom: 25px; }.showcase-autoplay { font-size: 7px; }.founder-note { padding: 15px; }.welcome-card { border-radius: 24px; } }
-@media(prefers-reduced-motion:reduce) { .showcase-slide,.showcase-image,.showcase-copy,.welcome-check,.welcome-check svg,.welcome-confetti i { animation: none !important; transition: none !important; } }
+@media(prefers-reduced-motion:reduce) { .welcome-confetti i { animation: none !important; } .showcase-slide,.showcase-image { transition-duration: .45s; } .showcase-copy,.welcome-check,.welcome-check svg { animation-duration: .45s; } }
